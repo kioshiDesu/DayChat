@@ -1,20 +1,27 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { Lock } from 'lucide-react'
+import { Lock, User } from 'lucide-react'
 import { LocalMessage } from '@/lib/db/daychat-db'
 
 interface MessageBubbleProps {
   message: LocalMessage
   isOwn: boolean
   canDelete: boolean
+  showName?: boolean
 }
 
-export function MessageBubble({ message, isOwn, canDelete }: MessageBubbleProps) {
+export function MessageBubble({ message, isOwn, canDelete, showName = true }: MessageBubbleProps) {
   const isExpired = message.expired
 
   return (
-    <div className={cn('flex', isOwn ? 'justify-end' : 'justify-start')}>
+    <div className={cn('flex flex-col', isOwn ? 'items-end' : 'items-start')}>
+      {showName && !isOwn && (
+        <div className="flex items-center gap-1 mb-1 ml-1">
+          <User className="h-3 w-3 text-muted-foreground" />
+          <span className="text-xs text-muted-foreground font-medium">{message.display_name}</span>
+        </div>
+      )}
       <div className={cn(
         'max-w-[80%] rounded-2xl px-4 py-2 relative transition-all',
         isOwn ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white' : 'bg-muted',
