@@ -131,6 +131,13 @@ export function ChatInterface() {
 
   const handleDeleteMessage = async () => {
     if (!selectedMessage) return
+    // Check if user owns this message or is room creator
+    const isOwner = selectedMessage.display_name === identity.displayName
+    if (!isOwner && !isCreator) {
+      alert('You can only delete your own messages')
+      return
+    }
+    
     const supabase = (await import('@/lib/supabase/client')).createClient()
     await (supabase.from('messages') as any).delete().eq('id', selectedMessage.id)
     // Mark as deleted locally (don't remove)

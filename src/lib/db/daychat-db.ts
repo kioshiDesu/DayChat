@@ -2,10 +2,8 @@ import Dexie, { Table } from 'dexie';
 
 export interface Identity {
   id?: string;
-  anonId: string;
-  displayName: string | null;
+  displayName: string;
   createdAt: Date;
-  token: string;
 }
 
 export interface LocalMessage {

@@ -8,58 +8,49 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { useIdentity } from '@/components/providers/identity-provider'
 import { Loader2, RefreshCw } from 'lucide-react'
+import { generateDisplayName } from '@/lib/identity-generator'
 
 export function IdentitySetup() {
-  const [generatedId, setGeneratedId] = useState('')
   const [displayName, setDisplayName] = useState('')
+  const [suggestedName, setSuggestedName] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const { regenerateIdentity, setIdentity } = useIdentity()
+  const { setIdentity } = useIdentity()
   const router = useRouter()
 
   useEffect(() => {
-    generateNewIdentity()
+    setSuggestedName(generateDisplayName())
+    setLoading(false)
   }, [])
 
-  const generateNewIdentity = async () => {
-    const newId = await regenerateIdentity()
-    setGeneratedId(newId)
-    setLoading(false)
+  const handleUseSuggested = () => {
+    setDisplayName(suggestedName)
   }
 
   const handleContinue = async () => {
+    if (!displayName.trim()) return
+    
     setSaving(true)
-    console.log('Saving identity:', {
-      id: 'current',
-      anonId: generatedId,
-      displayName: displayName.trim() || null,
-      createdAt: new Date(),
-    })
     
-    // Generate unique token for this identity
-    const { generateToken } = await import('@/lib/identity-generator')
-    const token = generateToken()
+    const finalName = displayName.trim()
     
-    // Save to IndexedDB directly to ensure persistence
+    // Save identity with just display name
     const { db } = await import('@/lib/db/daychat-db')
     await db.identity.put({
       id: 'current',
-      anonId: generatedId,
-      displayName: displayName.trim() || null,
+      displayName: finalName,
       createdAt: new Date(),
-      token,
     })
     
-    // Also save token to localStorage for quick access
-    localStorage.setItem('daychat_token', token)
-    localStorage.setItem('daychat_anon_id', generatedId)
+    // Save to localStorage for persistence
+    localStorage.setItem('daychat_display_name', finalName)
     
-    console.log('Identity saved with token:', token)
+    console.log('Identity saved:', finalName)
     
-    // Force a small delay to ensure DB write completes
+    // Small delay to ensure DB write completes
     await new Promise(resolve => setTimeout(resolve, 100))
     
-    // Hard redirect to force reload with new identity
+    // Hard redirect to force reload
     window.location.href = '/home'
   }
 
@@ -77,27 +68,37 @@ export function IdentitySetup() {
     <Card className="w-full max-w-md">
       <CardHeader className="text-center">
         <CardTitle className="text-2xl">Welcome to DayChat!</CardTitle>
-        <CardDescription>Let's create your anonymous identity</CardDescription>
+        <CardDescription>Choose your display name</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-2">
-          <Label>Your Anonymous ID</Label>
+          <Label>Display Name</Label>
           <div className="flex gap-2">
-            <div className="flex-1 p-3 bg-muted rounded-lg text-center font-mono">
-              {generatedId}
-            </div>
-            <Button variant="outline" size="icon" onClick={generateNewIdentity}>
+            <Input
+              placeholder="Enter your name"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              maxLength={30}
+              className="flex-1"
+            />
+            <Button
+              variant="outline"
+              onClick={handleUseSuggested}
+              title="Use suggested name"
+            >
               <RefreshCw className="h-4 w-4" />
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">Regenerate until you like it!</p>
+          <p className="text-xs text-muted-foreground">
+            This is how others will see you. Click ↻ for a random name.
+          </p>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="displayName">Display Name (optional)</Label>
-          <Input id="displayName" placeholder="What should we call you?" value={displayName} onChange={(e) => setDisplayName(e.target.value)} maxLength={30} />
-          <p className="text-xs text-muted-foreground">Leave empty to use your anonymous ID</p>
-        </div>
-        <Button className="w-full" onClick={handleContinue} disabled={saving}>
+
+        <Button 
+          className="w-full" 
+          onClick={handleContinue} 
+          disabled={saving || !displayName.trim()}
+        >
           {saving ? 'Saving...' : 'Continue to DayChat'}
         </Button>
       </CardContent>
