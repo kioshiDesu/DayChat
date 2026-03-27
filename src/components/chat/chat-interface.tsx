@@ -12,6 +12,7 @@ import { ChevronLeft } from 'lucide-react'
 
 export function ChatInterface() {
   const params = useParams()
+  const router = useRouter()
   const roomId = params.id as string
   const { identity } = useIdentity()
   const [messages, setMessages] = useState<LocalMessage[]>([])
