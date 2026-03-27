@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Progress } from '@/components/ui/progress'
 import { createClient } from '@/lib/supabase/client'
 import { useIdentity } from '@/components/providers/identity-provider'
+import { X } from 'lucide-react'
 
 type WizardStep = 'name' | 'visibility' | 'duration'
 
@@ -57,6 +58,10 @@ export function RoomWizard() {
     else { router.push(`/room/${(data as any).id}?share=true`) }
   }
 
+  const handleClose = () => {
+    router.push('/home')
+  }
+
   const generateInviteCode = () => {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
     let code = ''
@@ -67,8 +72,15 @@ export function RoomWizard() {
   return (
     <Card className="w-full max-w-lg">
       <CardHeader>
-        <CardTitle>Create Room</CardTitle>
-        <CardDescription>Step {step === 'name' ? '1' : step === 'visibility' ? '2' : '3'} of 3</CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Create Room</CardTitle>
+            <CardDescription>Step {step === 'name' ? '1' : step === 'visibility' ? '2' : '3'} of 3</CardDescription>
+          </div>
+          <Button variant="ghost" size="icon" onClick={handleClose}>
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
         <Progress value={getProgress()} className="h-2" />
       </CardHeader>
       <CardContent className="space-y-4">

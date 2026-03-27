@@ -1,13 +1,14 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { useIdentity } from '@/components/providers/identity-provider'
 import { MessageBubble } from './message-bubble'
 import { MessageInput } from './message-input'
 import { ShareModal } from '@/components/room/share-modal'
 import { db, LocalMessage } from '@/lib/db/daychat-db'
 import { sendMessage, loadMessages, subscribeToMessages } from '@/lib/messages/sync-service'
+import { ChevronLeft } from 'lucide-react'
 
 export function ChatInterface() {
   const params = useParams()
@@ -75,13 +76,22 @@ export function ChatInterface() {
 
   return (
     <div className="flex flex-col h-screen">
-      <div className="border-b p-4 bg-background">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="font-semibold">{room.title}</h2>
-            <p className="text-xs text-muted-foreground">
-              Expires: {new Date(room.expires_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </p>
+      {/* Header */}
+      <div className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => router.back()} 
+              className="p-2 -ml-2 hover:bg-muted rounded-full transition-colors"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <div>
+              <h2 className="font-semibold">{room.title}</h2>
+              <p className="text-xs text-muted-foreground">
+                Expires: {new Date(room.expires_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </p>
+            </div>
           </div>
           {!room.is_public && (
             <button onClick={() => setShowShareModal(true)} className="text-sm text-primary">
@@ -90,7 +100,9 @@ export function ChatInterface() {
           )}
         </div>
       </div>
-      <div ref={scrollRef} className="flex-1 overflow-auto p-4 space-y-3">
+
+      {/* Messages */}
+      <div ref={scrollRef} className="flex-1 overflow-auto p-4 space-y-3 pb-[env(safe-area-inset-bottom)]" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
         {messages.map((message) => (
           <MessageBubble
             key={message.id}
@@ -100,7 +112,13 @@ export function ChatInterface() {
           />
         ))}
       </div>
-      <MessageInput onSend={handleSendMessage} />
+
+      {/* Input */}
+      <div className="sticky bottom-0 z-40 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-[env(safe-area-inset-bottom)]">
+        <MessageInput onSend={handleSendMessage} />
+      </div>
+
+      {/* Share Modal */}
       {room && !room.is_public && (
         <ShareModal
           roomId={room.id}
