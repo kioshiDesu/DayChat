@@ -9,8 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Progress } from '@/components/ui/progress'
 import { createClient } from '@/lib/supabase/client'
-import { useSupabase } from '@/components/providers/supabase-provider'
-import { Database } from '@/types/database'
+import { useIdentity } from '@/components/providers/identity-provider'
 
 type WizardStep = 'name' | 'visibility' | 'duration'
 
@@ -24,7 +23,7 @@ export function RoomWizard() {
   const [error, setError] = useState<string | null>(null)
 
   const router = useRouter()
-  const { user } = useSupabase()
+  const { identity } = useIdentity()
   const supabase = createClient()
 
   const getProgress = () => {
@@ -36,7 +35,7 @@ export function RoomWizard() {
   }
 
   const handleCreate = async () => {
-    if (!user) { setError('You must be signed in'); return }
+    if (!identity) { setError('You must have an identity'); return }
 
     setLoading(true)
     setError(null)
@@ -44,8 +43,12 @@ export function RoomWizard() {
     expiresAt.setHours(expiresAt.getHours() + durationHours)
 
     const { data, error } = await supabase.from('rooms').insert({
-      creator_id: user.id, title, description: description || null, is_public: isPublic,
-      invite_code: generateInviteCode(), expires_at: expiresAt.toISOString(),
+      creator_anon_id: identity.anonId,
+      title,
+      description: description || null,
+      is_public: isPublic,
+      invite_code: generateInviteCode(),
+      expires_at: expiresAt.toISOString(),
     } as any).select().single()
 
     if (error) { setError(error.message); setLoading(false); return }
