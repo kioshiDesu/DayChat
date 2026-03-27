@@ -7,11 +7,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { RoomCard } from '@/components/room/room-card'
 import { BottomNav } from '@/components/layout/bottom-nav'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Database } from '@/types/database'
 
 export default function HomePage() {
   const { user } = useSupabase()
-  const [myRooms, setMyRooms] = useState<any[]>([])
-  const [discoverRooms, setDiscoverRooms] = useState<any[]>([])
+  const [myRooms, setMyRooms] = useState<Database['public']['Tables']['rooms']['Row'][]>([])
+  const [discoverRooms, setDiscoverRooms] = useState<Database['public']['Tables']['rooms']['Row'][]>([])
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
@@ -24,17 +25,17 @@ export default function HomePage() {
     const { data: myRoomsData } = await supabase.from('rooms').select('*').eq('creator_id', user.id).order('created_at', { ascending: false })
 
     const { data: joinedRoomsData } = await supabase.from('messages').select('room_id').eq('user_id', user.id)
-    let joinedRooms: any[] = []
+    let joinedRooms: Database['public']['Tables']['rooms']['Row'][] = []
     if (joinedRoomsData) {
-      const roomIds = [...new Set(joinedRoomsData.map(m => m.room_id))]
+      const roomIds = [...new Set(joinedRoomsData.map((m: { room_id: string }) => m.room_id))]
       const { data: joinedRoomsDetails } = await supabase.from('rooms').select('*').in('id', roomIds)
       joinedRooms = joinedRoomsDetails || []
     }
 
     setMyRooms([...(myRoomsData || []), ...joinedRooms].reduce((acc, room) => {
-      if (!acc.find(r => r.id === room.id)) acc.push(room)
+      if (!acc.find((r: { id: string }) => r.id === room.id)) acc.push(room)
       return acc
-    }, [] as any[]))
+    }, [] as Database['public']['Tables']['rooms']['Row'][]))
 
     const { data: publicRooms } = await supabase.from('rooms').select('*').eq('is_public', true).gt('expires_at', new Date().toISOString()).order('created_at', { ascending: false }).limit(50)
     setDiscoverRooms(publicRooms || [])

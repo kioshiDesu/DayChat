@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Progress } from '@/components/ui/progress'
 import { createClient } from '@/lib/supabase/client'
 import { useSupabase } from '@/components/providers/supabase-provider'
+import { Database } from '@/types/database'
 
 type WizardStep = 'name' | 'visibility' | 'duration'
 
@@ -45,12 +46,12 @@ export function RoomWizard() {
     const { data, error } = await supabase.from('rooms').insert({
       creator_id: user.id, title, description: description || null, is_public: isPublic,
       invite_code: generateInviteCode(), expires_at: expiresAt.toISOString(),
-    }).select().single()
+    } as any).select().single()
 
     if (error) { setError(error.message); setLoading(false); return }
 
-    if (isPublic) { router.push(`/room/${data.id}`) }
-    else { router.push(`/room/${data.id}?share=true`) }
+    if (isPublic) { router.push(`/room/${(data as any).id}`) }
+    else { router.push(`/room/${(data as any).id}?share=true`) }
   }
 
   const generateInviteCode = () => {

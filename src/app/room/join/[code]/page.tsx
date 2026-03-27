@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Database } from '@/types/database'
 
 export default function JoinRoomPage() {
   const params = useParams()
@@ -20,9 +21,9 @@ export default function JoinRoomPage() {
     const { data: room, error: fetchError } = await supabase.from('rooms').select('*').eq('invite_code', code).single()
 
     if (fetchError || !room) { setError('Invalid or expired room code'); setLoading(false); return }
-    if (new Date(room.expires_at) < new Date()) { setError('This room has expired'); setLoading(false); return }
+    if (new Date((room as Database['public']['Tables']['rooms']['Row']).expires_at) < new Date()) { setError('This room has expired'); setLoading(false); return }
 
-    router.push(`/room/${room.id}`)
+    router.push(`/room/${(room as Database['public']['Tables']['rooms']['Row']).id}`)
   }
 
   return (

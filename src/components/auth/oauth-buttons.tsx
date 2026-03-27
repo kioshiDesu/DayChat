@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
-import { Github, Chrome } from 'lucide-react'
+import { Globe, Terminal } from 'lucide-react'
 
 export function OAuthButtons() {
   const supabase = createClient()
@@ -17,10 +17,10 @@ export function OAuthButtons() {
   return (
     <div className="space-y-2">
       <Button variant="outline" className="w-full" onClick={() => handleOAuthSignIn('google')}>
-        <Chrome className="mr-2 h-4 w-4" /> Continue with Google
+        <Globe className="mr-2 h-4 w-4" /> Continue with Google
       </Button>
       <Button variant="outline" className="w-full" onClick={() => handleOAuthSignIn('github')}>
-        <Github className="mr-2 h-4 w-4" /> Continue with GitHub
+        <Terminal className="mr-2 h-4 w-4" /> Continue with GitHub
       </Button>
     </div>
   )

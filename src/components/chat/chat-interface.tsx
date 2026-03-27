@@ -7,6 +7,7 @@ import { useSupabase } from '@/components/providers/supabase-provider'
 import { MessageBubble } from './message-bubble'
 import { MessageInput } from './message-input'
 import { ShareModal } from '@/components/room/share-modal'
+import { Database } from '@/types/database'
 
 interface Message { id: string; room_id: string; user_id: string; content: string; expires_at: string; created_at: string }
 
@@ -16,11 +17,11 @@ export function ChatInterface() {
   const { user } = useSupabase()
   const supabase = createClient()
   const [messages, setMessages] = useState<Message[]>([])
-  const [room, setRoom] = useState<any>(null)
+  const [room, setRoom] = useState<Database['public']['Tables']['rooms']['Row'] | null>(null)
   const [showShareModal, setShowShareModal] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => { loadRoom(); loadMessages(); subscribeToMessages(); return () => { supabase.removeChannel() } }, [roomId])
+  useEffect(() => { loadRoom(); loadMessages(); subscribeToMessages(); return () => { } }, [roomId])
 
   useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight }, [messages])
 
@@ -31,7 +32,7 @@ export function ChatInterface() {
 
   const loadMessages = async () => {
     const { data } = await supabase.from('messages').select('*').eq('room_id', roomId).order('created_at', { ascending: true })
-    if (data) setMessages(data)
+    if (data) setMessages(data as Message[])
   }
 
   const subscribeToMessages = () => {
@@ -46,7 +47,7 @@ export function ChatInterface() {
     if (!user) return
     const expiresAt = new Date()
     expiresAt.setHours(expiresAt.getHours() + 24)
-    await supabase.from('messages').insert({ room_id: roomId, user_id: user.id, content, expires_at: expiresAt.toISOString() })
+    await supabase.from('messages').insert({ room_id: roomId, user_id: user.id, content, expires_at: expiresAt.toISOString() } as any)
   }
 
   const handleDeleteMessage = async (messageId: string) => {
