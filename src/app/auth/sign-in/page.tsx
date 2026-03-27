@@ -3,8 +3,6 @@
 import dynamic from 'next/dynamic'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
-export const dynamic = 'force-dynamic'
-
 const SignInForm = dynamic(() => import('@/components/auth/sign-in-form').then(mod => ({ default: mod.SignInForm })), {
   ssr: false,
   loading: () => (
