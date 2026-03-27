@@ -115,7 +115,7 @@ export function ChatInterface() {
 
   const handleUpdateTitle = async (newTitle: string) => {
     const supabase = (await import('@/lib/supabase/client')).createClient()
-    await supabase.from('rooms').update({ title: newTitle }).eq('id', roomId)
+    await supabase.from('rooms').update({ title: newTitle } as any).eq('id', roomId)
     setRoom({ ...room, title: newTitle })
     setShowSettings(false)
   }
