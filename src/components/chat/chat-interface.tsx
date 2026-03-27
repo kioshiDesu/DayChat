@@ -2,59 +2,60 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { useSupabase } from '@/components/providers/supabase-provider'
+import { useIdentity } from '@/components/providers/identity-provider'
 import { MessageBubble } from './message-bubble'
 import { MessageInput } from './message-input'
 import { ShareModal } from '@/components/room/share-modal'
-import { Database } from '@/types/database'
-
-interface Message { id: string; room_id: string; user_id: string; content: string; expires_at: string; created_at: string }
+import { db, LocalMessage } from '@/lib/db/daychat-db'
+import { sendMessage, loadMessages, subscribeToMessages } from '@/lib/messages/sync-service'
 
 export function ChatInterface() {
   const params = useParams()
   const roomId = params.id as string
-  const { user } = useSupabase()
-  const supabase = createClient()
-  const [messages, setMessages] = useState<Message[]>([])
-  const [room, setRoom] = useState<Database['public']['Tables']['rooms']['Row'] | null>(null)
+  const { identity } = useIdentity()
+  const [messages, setMessages] = useState<LocalMessage[]>([])
+  const [room, setRoom] = useState<any>(null)
   const [showShareModal, setShowShareModal] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => { loadRoom(); loadMessages(); subscribeToMessages(); return () => { } }, [roomId])
+  useEffect(() => {
+    if (!identity) return
+    loadRoom()
+    loadMessages(roomId).then(setMessages)
+    const unsubscribe = subscribeToMessages(roomId, (msg, type) => {
+      setMessages(prev => {
+        const exists = prev.find(m => m.id === msg.id)
+        if (exists) {
+          return prev.map(m => m.id === msg.id ? msg : m)
+        }
+        return [...prev, msg]
+      })
+    })
+    return () => unsubscribe()
+  }, [roomId, identity])
 
-  useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight }, [messages])
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    }
+  }, [messages])
 
   const loadRoom = async () => {
+    const supabase = (await import('@/lib/supabase/client')).createClient()
     const { data } = await supabase.from('rooms').select('*').eq('id', roomId).single()
     setRoom(data)
   }
 
-  const loadMessages = async () => {
-    const { data } = await supabase.from('messages').select('*').eq('room_id', roomId).order('created_at', { ascending: true })
-    if (data) setMessages(data as Message[])
-  }
-
-  const subscribeToMessages = () => {
-    const channel = supabase.channel(`room:${roomId}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `room_id=eq.${roomId}` }, (payload) => {
-        setMessages((prev) => [...prev, payload.new as Message])
-      })
-      .subscribe()
-  }
-
   const handleSendMessage = async (content: string) => {
-    if (!user) return
-    const expiresAt = new Date()
-    expiresAt.setHours(expiresAt.getHours() + 24)
-    await supabase.from('messages').insert({ room_id: roomId, user_id: user.id, content, expires_at: expiresAt.toISOString() } as any)
+    if (!identity) return
+    try {
+      await sendMessage(roomId, content, identity)
+    } catch (error) {
+      console.error('Failed to send message:', error)
+    }
   }
 
-  const handleDeleteMessage = async (messageId: string) => {
-    await supabase.from('messages').delete().eq('id', messageId)
-  }
-
-  if (!room) return null
+  if (!room || !identity) return null
 
   return (
     <div className="flex flex-col h-screen">
@@ -62,18 +63,36 @@ export function ChatInterface() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="font-semibold">{room.title}</h2>
-            <p className="text-xs text-muted-foreground">Expires: {new Date(room.expires_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+            <p className="text-xs text-muted-foreground">
+              Expires: {new Date(room.expires_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </p>
           </div>
-          {!room.is_public && <button onClick={() => setShowShareModal(true)} className="text-sm text-primary">Share</button>}
+          {!room.is_public && (
+            <button onClick={() => setShowShareModal(true)} className="text-sm text-primary">
+              Share
+            </button>
+          )}
         </div>
       </div>
       <div ref={scrollRef} className="flex-1 overflow-auto p-4 space-y-3">
         {messages.map((message) => (
-          <MessageBubble key={message.id} message={message} isOwn={message.user_id === user?.id} canDelete={room.creator_id === user?.id} onDelete={handleDeleteMessage} />
+          <MessageBubble
+            key={message.id}
+            message={message}
+            isOwn={message.user_anon_id === identity.anonId}
+            canDelete={room.creator_anon_id === identity.anonId}
+          />
         ))}
       </div>
       <MessageInput onSend={handleSendMessage} />
-      {room && !room.is_public && <ShareModal roomId={room.id} inviteCode={room.invite_code} open={showShareModal} onOpenChange={setShowShareModal} />}
+      {room && !room.is_public && (
+        <ShareModal
+          roomId={room.id}
+          inviteCode={room.invite_code}
+          open={showShareModal}
+          onOpenChange={setShowShareModal}
+        />
+      )}
     </div>
   )
 }

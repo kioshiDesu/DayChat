@@ -1,6 +1,12 @@
 import { createClient } from '@/lib/supabase/client'
-import { db, LocalMessage } from '@/lib/db/daychat-db'
-import { Identity } from '@/lib/db/daychat-db'
+import { db, LocalMessage, Identity as DbIdentity } from '@/lib/db/daychat-db'
+
+export interface Identity {
+  id?: string
+  anonId: string
+  displayName: string | null
+  createdAt: Date
+}
 
 const supabase = createClient()
 
@@ -30,7 +36,7 @@ export async function sendMessage(roomId: string, content: string, identity: Ide
       display_name: identity.displayName || identity.anonId,
       content,
       expires_at: expiresAt.toISOString(),
-    })
+    } as any)
     .select()
     .single()
 
