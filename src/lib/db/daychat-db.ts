@@ -3,6 +3,7 @@ import Dexie, { Table } from 'dexie';
 export interface Identity {
   id?: string;
   displayName: string;
+  token: string;
   createdAt: Date;
 }
 

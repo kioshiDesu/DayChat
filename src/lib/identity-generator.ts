@@ -7,3 +7,8 @@ export function generateDisplayName(): string {
   const num = Math.floor(Math.random() * 1000);
   return `${adj} ${animal} ${num}`;
 }
+
+export function generateToken(): string {
+  // Generate unique token: tok_[random]_[timestamp]
+  return 'tok_' + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+}

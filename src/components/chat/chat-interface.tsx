@@ -131,7 +131,7 @@ export function ChatInterface() {
 
   const handleDeleteMessage = async () => {
     if (!selectedMessage) return
-    // Check if user owns this message or is room creator
+    // Check if user owns this message (by display name) or is room creator
     const isOwner = selectedMessage.display_name === identity.displayName
     if (!isOwner && !isCreator) {
       alert('You can only delete your own messages')
