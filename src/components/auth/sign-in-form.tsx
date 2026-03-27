@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { createClient } from '@/lib/supabase/client'
 import { useSupabase } from '@/components/providers/supabase-provider'
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react'
@@ -91,7 +90,7 @@ export function SignInForm() {
           disabled={loading}
         />
       </div>
-      <Button type="submit" className="w-full" disabled={loading || !!message?.type === 'success'}>
+      <Button type="submit" className="w-full" disabled={loading || message?.type === 'success'}>
         {loading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -103,14 +102,18 @@ export function SignInForm() {
       </Button>
       
       {message && (
-        <Alert variant={message.type === 'error' ? 'destructive' : 'default'} className={message.type === 'success' ? 'bg-green-50 border-green-200' : ''}>
+        <div className={`flex items-center gap-2 p-3 rounded-lg text-sm ${
+          message.type === 'success' 
+            ? 'bg-green-50 text-green-700 border border-green-200' 
+            : 'bg-red-50 text-red-700 border border-red-200'
+        }`}>
           {message.type === 'success' ? (
-            <CheckCircle className="h-4 w-4 text-green-600" />
+            <CheckCircle className="h-4 w-4 flex-shrink-0" />
           ) : (
-            <XCircle className="h-4 w-4 text-red-600" />
+            <XCircle className="h-4 w-4 flex-shrink-0" />
           )}
-          <AlertDescription className="ml-2">{message.text}</AlertDescription>
-        </Alert>
+          <span>{message.text}</span>
+        </div>
       )}
       
       <p className="text-xs text-center text-muted-foreground">
