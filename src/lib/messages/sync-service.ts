@@ -28,10 +28,7 @@ export async function sendMessage(roomId: string, content: string, identity: Ide
 
   await db.messages.add(localMessage)
 
-  // Set anon_id in session for RLS
   const supabase = createClient()
-  await supabase.rpc('set_anon_id', { anon_id: identity.anonId })
-
   const { data, error } = await supabase
     .from('messages')
     .insert({
