@@ -79,24 +79,37 @@ export async function loadMessages(roomId: string): Promise<LocalMessage[]> {
 }
 
 export function subscribeToMessages(roomId: string, onMessage: (msg: LocalMessage, type: 'new' | 'expired') => void) {
+  console.log('Subscribing to messages for room:', roomId)
   const channel = supabase
     .channel(`room:${roomId}`)
-    .on('postgres_changes', 
+    .on('postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'messages', filter: `room_id=eq.${roomId}` },
       async (payload) => {
+        console.log('Received INSERT event:', payload.new)
         const newMsg = payload.new as LocalMessage
         await db.messages.put({ ...newMsg, expired: false, synced: true })
         onMessage(newMsg, 'new')
       }
     )
-    .on('postgres_changes', 
+    .on('postgres_changes',
       { event: 'DELETE', schema: 'public', table: 'messages' },
       async (payload) => {
+        console.log('Received DELETE event:', payload.old)
         await db.messages.update(payload.old.id, { expired: true })
         onMessage({ ...payload.old, expired: true } as LocalMessage, 'expired')
       }
     )
-    .subscribe()
+    .subscribe((status) => {
+      console.log('Subscription status:', status)
+      if (status === 'SUBSCRIBED') {
+        console.log('Successfully subscribed to room:', roomId)
+      } else if (status === 'CHANNEL_ERROR') {
+        console.error('Subscription error for room:', roomId)
+      }
+    })
 
-  return () => { supabase.removeChannel(channel) }
+  return () => { 
+    console.log('Unsubscribing from room:', roomId)
+    supabase.removeChannel(channel) 
+  }
 }

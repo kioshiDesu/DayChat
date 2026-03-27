@@ -20,14 +20,24 @@ export function ChatInterface() {
 
   useEffect(() => {
     if (!identity) return
+    
+    console.log('ChatInterface: initializing for room', roomId)
     loadRoom()
-    loadMessages(roomId).then(setMessages)
+    
+    loadMessages(roomId).then(msgs => {
+      console.log('Loaded messages:', msgs.length)
+      setMessages(msgs)
+    })
+    
     const unsubscribe = subscribeToMessages(roomId, (msg, type) => {
+      console.log('Received message update:', type, msg.id)
       setMessages(prev => {
         const exists = prev.find(m => m.id === msg.id)
         if (exists) {
+          console.log('Updating existing message')
           return prev.map(m => m.id === msg.id ? msg : m)
         }
+        console.log('Adding new message')
         return [...prev, msg]
       })
     })
