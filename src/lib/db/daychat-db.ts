@@ -1,6 +1,7 @@
 import Dexie, { Table } from 'dexie';
 
 export interface Identity {
+  id?: string;
   anonId: string;
   displayName: string | null;
   createdAt: Date;
@@ -26,7 +27,7 @@ export class DayChatDB extends Dexie {
   constructor() {
     super('DayChatDB');
     this.version(1).stores({
-      identity: 'anonId',
+      identity: 'id',
       messages: 'id, room_id, expired, synced, expires_at'
     });
   }

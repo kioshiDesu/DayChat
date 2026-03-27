@@ -32,7 +32,7 @@ export function IdentityProvider({ children }: { children: ReactNode }) {
   }
 
   const setIdentity = async (newIdentity: Identity) => {
-    await db.identity.put({ ...newIdentity }, 'current')
+    await db.identity.put({ ...newIdentity, id: 'current' }, 'current')
     setIdentityState(newIdentity)
   }
 
