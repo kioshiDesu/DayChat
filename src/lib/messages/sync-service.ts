@@ -37,12 +37,13 @@ export async function sendMessage(roomId: string, content: string, identity: Ide
       content,
       expires_at: expiresAt.toISOString(),
     } as any)
-    .select()
-    .single()
+    .select('*')
+    .single() as { data: { id: string } | null; error: any }
 
-  if (error) {
+  if (error || !data) {
     await db.messages.update(tempId, { synced: false })
-    throw error
+    if (error) throw error
+    throw new Error('No data returned')
   }
 
   await db.messages.update(tempId, { id: data.id, synced: true })
