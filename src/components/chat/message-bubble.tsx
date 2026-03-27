@@ -1,7 +1,8 @@
 'use client'
 
+import { useState } from 'react'
 import { cn } from '@/lib/utils'
-import { Lock, User } from 'lucide-react'
+import { Lock, User, Pin } from 'lucide-react'
 import { LocalMessage } from '@/lib/db/daychat-db'
 
 interface MessageBubbleProps {
@@ -9,24 +10,60 @@ interface MessageBubbleProps {
   isOwn: boolean
   canDelete: boolean
   showName?: boolean
+  isPinned?: boolean
+  onLongPress?: () => void
 }
 
-export function MessageBubble({ message, isOwn, canDelete, showName = true }: MessageBubbleProps) {
+export function MessageBubble({ 
+  message, 
+  isOwn, 
+  canDelete, 
+  showName = true,
+  isPinned = false,
+  onLongPress,
+}: MessageBubbleProps) {
   const isExpired = message.expired
+  const [touchTimer, setTouchTimer] = useState<NodeJS.Timeout | null>(null)
+
+  const handleTouchStart = () => {
+    const timer = setTimeout(() => {
+      onLongPress?.()
+    }, 500)
+    setTouchTimer(timer)
+  }
+
+  const handleTouchEnd = () => {
+    if (touchTimer) {
+      clearTimeout(touchTimer)
+      setTouchTimer(null)
+    }
+  }
 
   return (
-    <div className={cn('flex flex-col', isOwn ? 'items-end' : 'items-start')}>
+    <div 
+      className={cn('flex flex-col', isOwn ? 'items-end' : 'items-start')}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       {showName && !isOwn && (
         <div className="flex items-center gap-1 mb-1 ml-1">
           <User className="h-3 w-3 text-muted-foreground" />
           <span className="text-xs text-muted-foreground font-medium">{message.display_name}</span>
         </div>
       )}
-      <div className={cn(
-        'max-w-[80%] rounded-2xl px-4 py-2 relative transition-all',
-        isOwn ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white' : 'bg-muted',
-        isExpired && 'opacity-60 grayscale'
-      )}>
+      <div 
+        className={cn(
+          'max-w-[80%] rounded-2xl px-4 py-2 relative transition-all',
+          isOwn ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white' : 'bg-muted',
+          isExpired && 'opacity-60 grayscale',
+          isPinned && 'ring-2 ring-primary'
+        )}
+      >
+        {isPinned && (
+          <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full p-1">
+            <Pin className="h-3 w-3 fill-current" />
+          </div>
+        )}
         {isExpired && (
           <div className="flex items-center gap-1 text-xs mb-1 opacity-70">
             <Lock className="h-3 w-3" />
