@@ -20,9 +20,33 @@ Ephemeral community rooms that last 24 hours.
 
 ## Supabase Setup
 
-In Supabase SQL Editor, run:
+### 1. Enable pg_cron Extension
+
+In Supabase Dashboard → Database → Extensions, enable **pg_cron**.
+
+### 2. Run Migrations
+
+In Supabase SQL Editor, run the migration files in order:
+
+1. `supabase/migrations/001_initial_schema.sql` - Creates tables, indexes, RLS policies
+2. `supabase/migrations/002_cleanup_job.sql` - Creates cleanup function and schedules hourly cron job
+
+### 3. Verify Setup
+
 ```sql
-CREATE EXTENSION IF NOT EXISTS pg_cron;
+-- Check tables exist
+SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';
+
+-- Verify cron job is scheduled
+SELECT * FROM cron.job;
+
+-- Test cleanup function
+SELECT cleanup_expired_data();
 ```
 
-Then run the migration files in order.
+## How It Works
+
+- **Rooms** expire after 24 hours (or custom duration)
+- **Messages** expire 24 hours after being posted
+- **pg_cron** runs hourly to delete expired data
+- **Real-time** updates via Supabase Realtime subscriptions
