@@ -62,8 +62,13 @@ export async function loadMessages(roomId: string): Promise<LocalMessage[]> {
 
   const serverIds = new Set(serverMessages.map(m => m.id))
 
+  // Only mark as expired if it's NOT on server AND it's older than 24 hours
+  const now = Date.now()
   for (const msg of localMessages) {
-    if (!serverIds.has(msg.id) && !msg.expired) {
+    const msgTime = new Date(msg.created_at).getTime()
+    const isOlderThan24h = now - msgTime > 24 * 60 * 60 * 1000
+    
+    if (!serverIds.has(msg.id) && isOlderThan24h && !msg.expired) {
       await db.messages.update(msg.id, { expired: true })
     }
   }
@@ -75,7 +80,11 @@ export async function loadMessages(roomId: string): Promise<LocalMessage[]> {
     }
   }
 
-  return db.messages.where('room_id').equals(roomId).toArray()
+  // Return messages sorted by created_at
+  const allMessages = await db.messages.where('room_id').equals(roomId).toArray()
+  return allMessages.sort((a, b) => 
+    new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  )
 }
 
 export function subscribeToMessages(roomId: string, onMessage: (msg: LocalMessage, type: 'new' | 'expired') => void) {

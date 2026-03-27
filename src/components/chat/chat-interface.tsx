@@ -33,12 +33,18 @@ export function ChatInterface() {
       console.log('Received message update:', type, msg.id)
       setMessages(prev => {
         const exists = prev.find(m => m.id === msg.id)
+        let updated
         if (exists) {
           console.log('Updating existing message')
-          return prev.map(m => m.id === msg.id ? msg : m)
+          updated = prev.map(m => m.id === msg.id ? msg : m)
+        } else {
+          console.log('Adding new message')
+          updated = [...prev, msg]
         }
-        console.log('Adding new message')
-        return [...prev, msg]
+        // Sort by created_at
+        return updated.sort((a, b) => 
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        )
       })
     })
     return () => unsubscribe()
