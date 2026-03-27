@@ -115,21 +115,21 @@ export function ChatInterface() {
 
   const handleUpdateTitle = async (newTitle: string) => {
     const supabase = (await import('@/lib/supabase/client')).createClient()
-    await supabase.from('rooms').update({ title: newTitle } as any).eq('id', roomId)
+    await (supabase.from('rooms') as any).update({ title: newTitle }).eq('id', roomId)
     setRoom({ ...room, title: newTitle })
     setShowSettings(false)
   }
 
   const handleDeleteRoom = async () => {
     const supabase = (await import('@/lib/supabase/client')).createClient()
-    await supabase.from('rooms').delete().eq('id', roomId)
+    await (supabase.from('rooms') as any).delete().eq('id', roomId)
     router.push('/home')
   }
 
   const handleDeleteMessage = async () => {
     if (!selectedMessage) return
     const supabase = (await import('@/lib/supabase/client')).createClient()
-    await supabase.from('messages').delete().eq('id', selectedMessage.id)
+    await (supabase.from('messages') as any).delete().eq('id', selectedMessage.id)
     setMessages(prev => prev.filter(m => m.id !== selectedMessage.id))
     setShowActions(false)
     setSelectedMessage(null)
