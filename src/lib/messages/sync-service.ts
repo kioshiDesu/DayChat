@@ -56,7 +56,7 @@ export async function loadMessages(roomId: string): Promise<LocalMessage[]> {
     .from('messages')
     .select('*')
     .eq('room_id', roomId)
-    .order('created_at', { ascending: true })
+    .order('created_at', { ascending: true }) as { data: LocalMessage[] | null }
 
   if (!serverMessages) return localMessages
 
