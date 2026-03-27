@@ -1,52 +1,37 @@
-# DayChat
+# DayChat v2
 
-Ephemeral community rooms that last 24 hours.
+Anonymous, ephemeral community rooms that last 24 hours. No auth required.
+
+## Features
+
+- 🔐 **Anonymous** - No email, no password, auto-generated identity
+- ⏰ **Ephemeral** - Rooms and messages expire after 24 hours
+- 💾 **Local Persistence** - Expired messages stay in your browser
+- 🎨 **Visual Expiry** - Clear countdown timers and expiry indicators
 
 ## Setup
 
-1. Create a Supabase project
-2. Run migrations in `supabase/migrations/`
-3. Enable pg_cron extension in Supabase dashboard
-4. Copy `.env.example` to `.env.local` and fill in values
-5. Run `npm install`
-6. Run `npm run dev`
+1. Run migrations in Supabase SQL Editor:
+   - `supabase/migrations/001_initial_schema.sql`
+   - `supabase/migrations/002_cleanup_job.sql`
+   - `supabase/migrations/003_anonymous_users.sql`
 
-## Deploy to Vercel
+2. Enable pg_cron in Supabase Dashboard → Database → Extensions
 
-1. Push to GitHub
-2. Import project in Vercel
-3. Add environment variables
-4. Deploy
+3. Run `npm install`
 
-## Supabase Setup
+4. Run `npm run dev`
 
-### 1. Enable pg_cron Extension
+## First Time Use
 
-In Supabase Dashboard → Database → Extensions, enable **pg_cron**.
-
-### 2. Run Migrations
-
-In Supabase SQL Editor, run the migration files in order:
-
-1. `supabase/migrations/001_initial_schema.sql` - Creates tables, indexes, RLS policies
-2. `supabase/migrations/002_cleanup_job.sql` - Creates cleanup function and schedules hourly cron job
-
-### 3. Verify Setup
-
-```sql
--- Check tables exist
-SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';
-
--- Verify cron job is scheduled
-SELECT * FROM cron.job;
-
--- Test cleanup function
-SELECT cleanup_expired_data();
-```
+1. Visit the app
+2. Get assigned an anonymous ID (e.g., "Swift Tiger-7k9m")
+3. Optionally set a display name
+4. Start chatting!
 
 ## How It Works
 
-- **Rooms** expire after 24 hours (or custom duration)
-- **Messages** expire 24 hours after being posted
-- **pg_cron** runs hourly to delete expired data
-- **Real-time** updates via Supabase Realtime subscriptions
+- **Identity**: Stored locally in your browser (IndexedDB)
+- **Messages**: Synced to Supabase + cached locally
+- **Expiry**: Messages expire after 24h from server, but stay in your browser
+- **Cleanup**: pg_cron runs hourly to delete expired data
