@@ -9,37 +9,89 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
-      [key: string]: {
+      rooms: {
         Row: {
-          [key: string]: any
+          id: string
+          creator_id: string
+          title: string
+          description: string | null
+          is_public: boolean
+          invite_code: string
+          expires_at: string
+          created_at: string
         }
         Insert: {
-          [key: string]: any
+          id?: string
+          creator_id: string
+          title: string
+          description?: string | null
+          is_public: boolean
+          invite_code: string
+          expires_at: string
+          created_at?: string
         }
         Update: {
-          [key: string]: any
+          id?: string
+          creator_id?: string
+          title?: string
+          description?: string | null
+          is_public?: boolean
+          invite_code?: string
+          expires_at?: string
+          created_at?: string
         }
       }
-    }
-    Views: {
-      [key: string]: {
+      messages: {
         Row: {
-          [key: string]: any
+          id: string
+          room_id: string
+          user_id: string
+          content: string
+          expires_at: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          room_id: string
+          user_id: string
+          content: string
+          expires_at: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          room_id?: string
+          user_id?: string
+          content?: string
+          expires_at?: string
+          created_at?: string
+        }
+      }
+      reports: {
+        Row: {
+          id: string
+          message_id: string
+          reporter_id: string
+          reason: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          message_id: string
+          reporter_id: string
+          reason: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          message_id?: string
+          reporter_id?: string
+          reason?: string
+          created_at?: string
         }
       }
     }
-    Functions: {
-      [key: string]: {
-        Args: {
-          [key: string]: any
-        }
-        Returns: {
-          [key: string]: any
-        }
-      }
-    }
-    Enums: {
-      [key: string]: string | number | boolean
-    }
+    Views: {}
+    Functions: {}
   }
 }
