@@ -26,9 +26,20 @@ export function IdentityProvider({ children }: { children: ReactNode }) {
       console.log('Loading identity from IndexedDB...')
       const stored = await db.identity.get('current')
       console.log('Identity loaded:', stored ? 'FOUND' : 'NOT FOUND')
+      
       if (stored) {
-        console.log('Identity:', stored)
-        setIdentityState(stored)
+        // Verify token matches localStorage
+        const storedToken = localStorage.getItem('daychat_token')
+        if (stored.token && storedToken !== stored.token) {
+          console.log('Token mismatch! Clearing identity.')
+          await db.identity.clear()
+          localStorage.removeItem('daychat_token')
+          localStorage.removeItem('daychat_anon_id')
+          setIdentityState(null)
+        } else {
+          console.log('Identity:', stored)
+          setIdentityState(stored)
+        }
       }
     } catch (error) {
       console.error('Failed to load identity:', error)

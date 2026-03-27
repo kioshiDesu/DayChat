@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
-import { Lock, User, Pin } from 'lucide-react'
+import { Lock, User, Pin, Trash2 } from 'lucide-react'
 import { LocalMessage } from '@/lib/db/daychat-db'
 
 interface MessageBubbleProps {
@@ -22,7 +22,6 @@ export function MessageBubble({
   isPinned = false,
   onLongPress,
 }: MessageBubbleProps) {
-  const isExpired = message.expired
   const [touchTimer, setTouchTimer] = useState<NodeJS.Timeout | null>(null)
 
   const handleTouchStart = () => {
@@ -37,6 +36,20 @@ export function MessageBubble({
       clearTimeout(touchTimer)
       setTouchTimer(null)
     }
+  }
+
+  // Show deleted message placeholder
+  if (message.deleted) {
+    return (
+      <div className={cn('flex flex-col', isOwn ? 'items-end' : 'items-start')}>
+        <div className="max-w-[80%] rounded-2xl px-4 py-2 bg-muted/50 opacity-50">
+          <p className="text-sm italic text-muted-foreground">
+            <Trash2 className="h-3 w-3 inline mr-1" />
+            (Deleted message)
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -55,7 +68,7 @@ export function MessageBubble({
         className={cn(
           'max-w-[80%] rounded-2xl px-4 py-2 relative transition-all',
           isOwn ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white' : 'bg-muted',
-          isExpired && 'opacity-60 grayscale',
+          message.expired && 'opacity-60 grayscale',
           isPinned && 'ring-2 ring-primary'
         )}
       >
@@ -64,7 +77,7 @@ export function MessageBubble({
             <Pin className="h-3 w-3 fill-current" />
           </div>
         )}
-        {isExpired && (
+        {message.expired && (
           <div className="flex items-center gap-1 text-xs mb-1 opacity-70">
             <Lock className="h-3 w-3" />
             <span>Expired (local only)</span>

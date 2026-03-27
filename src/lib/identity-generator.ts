@@ -8,6 +8,10 @@ export function generateAnonymousId(): string {
   return `${adj} ${animal}-${num}`;
 }
 
+export function generateToken(): string {
+  return 'tok_' + Math.random().toString(36).substring(2) + Date.now().toString(36);
+}
+
 export async function generateUniqueIdentity(): Promise<string> {
   let attempts = 0;
   while (attempts < 5) {

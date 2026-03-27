@@ -115,12 +115,15 @@ export function ChatInterface() {
 
   const handleUpdateTitle = async (newTitle: string) => {
     const supabase = (await import('@/lib/supabase/client')).createClient()
-    await (supabase.from('rooms') as any).update({ title: newTitle }).eq('id', roomId)
-    setRoom({ ...room, title: newTitle })
+    const result = await (supabase.from('rooms') as any).update({ title: newTitle }).eq('id', roomId).select()
+    if (result.data && result.data.length > 0) {
+      setRoom({ ...room, title: newTitle })
+    }
     setShowSettings(false)
   }
 
   const handleDeleteRoom = async () => {
+    if (!confirm('Are you sure you want to delete this room? This cannot be undone.')) return
     const supabase = (await import('@/lib/supabase/client')).createClient()
     await (supabase.from('rooms') as any).delete().eq('id', roomId)
     router.push('/home')
@@ -130,7 +133,12 @@ export function ChatInterface() {
     if (!selectedMessage) return
     const supabase = (await import('@/lib/supabase/client')).createClient()
     await (supabase.from('messages') as any).delete().eq('id', selectedMessage.id)
-    setMessages(prev => prev.filter(m => m.id !== selectedMessage.id))
+    // Mark as deleted locally (don't remove)
+    setMessages(prev => prev.map(m => 
+      m.id === selectedMessage.id 
+        ? { ...m, deleted: true, content: '(Deleted message)', expired: true }
+        : m
+    ))
     setShowActions(false)
     setSelectedMessage(null)
   }

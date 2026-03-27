@@ -36,6 +36,10 @@ export function IdentitySetup() {
       createdAt: new Date(),
     })
     
+    // Generate unique token for this identity
+    const { generateToken } = await import('@/lib/identity-generator')
+    const token = generateToken()
+    
     // Save to IndexedDB directly to ensure persistence
     const { db } = await import('@/lib/db/daychat-db')
     await db.identity.put({
@@ -43,9 +47,14 @@ export function IdentitySetup() {
       anonId: generatedId,
       displayName: displayName.trim() || null,
       createdAt: new Date(),
+      token,
     })
     
-    console.log('Identity saved, redirecting...')
+    // Also save token to localStorage for quick access
+    localStorage.setItem('daychat_token', token)
+    localStorage.setItem('daychat_anon_id', generatedId)
+    
+    console.log('Identity saved with token:', token)
     
     // Force a small delay to ensure DB write completes
     await new Promise(resolve => setTimeout(resolve, 100))

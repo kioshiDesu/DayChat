@@ -5,7 +5,7 @@ export interface Identity {
   anonId: string;
   displayName: string | null;
   createdAt: Date;
-  deviceFingerprint?: string;
+  token: string;
 }
 
 export interface LocalMessage {
@@ -18,6 +18,7 @@ export interface LocalMessage {
   created_at: string;
   expired: boolean;
   synced: boolean;
+  deleted?: boolean;
 }
 
 export class DayChatDB extends Dexie {

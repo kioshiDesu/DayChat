@@ -24,6 +24,7 @@ export async function sendMessage(roomId: string, content: string, identity: Ide
     created_at: new Date().toISOString(),
     expired: false,
     synced: false,
+    deleted: false,
   }
 
   await db.messages.add(localMessage)
@@ -88,7 +89,7 @@ export async function loadMessages(roomId: string): Promise<LocalMessage[]> {
   )
 }
 
-export function subscribeToMessages(roomId: string, onMessage: (msg: LocalMessage, type: 'new' | 'expired') => void) {
+export function subscribeToMessages(roomId: string, onMessage: (msg: LocalMessage, type: 'new' | 'expired' | 'deleted') => void) {
   console.log('Subscribing to messages for room:', roomId)
   const channel = supabase
     .channel(`room:${roomId}`)
@@ -97,7 +98,7 @@ export function subscribeToMessages(roomId: string, onMessage: (msg: LocalMessag
       async (payload) => {
         console.log('Received INSERT event:', payload.new)
         const newMsg = payload.new as LocalMessage
-        await db.messages.put({ ...newMsg, expired: false, synced: true })
+        await db.messages.put({ ...newMsg, expired: false, synced: true, deleted: false })
         onMessage(newMsg, 'new')
       }
     )
@@ -105,8 +106,9 @@ export function subscribeToMessages(roomId: string, onMessage: (msg: LocalMessag
       { event: 'DELETE', schema: 'public', table: 'messages' },
       async (payload) => {
         console.log('Received DELETE event:', payload.old)
-        await db.messages.update(payload.old.id, { expired: true })
-        onMessage({ ...payload.old, expired: true } as LocalMessage, 'expired')
+        // Mark as deleted instead of removing
+        await db.messages.update(payload.old.id, { expired: true, deleted: true, content: '(Deleted message)' })
+        onMessage({ ...payload.old, expired: true, deleted: true, content: '(Deleted message)' } as LocalMessage, 'deleted')
       }
     )
     .subscribe((status) => {
