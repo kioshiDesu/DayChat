@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import { SupabaseProvider } from '@/components/providers/supabase-provider'
 import { IdentityProvider } from '@/components/providers/identity-provider'
+import { IdentityGuard } from '@/components/guards/identity-guard'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -32,7 +33,9 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <SupabaseProvider>
-          <IdentityProvider>{children}</IdentityProvider>
+          <IdentityProvider>
+            <IdentityGuard>{children}</IdentityGuard>
+          </IdentityProvider>
         </SupabaseProvider>
       </body>
     </html>
