@@ -29,13 +29,29 @@ export function IdentitySetup() {
 
   const handleContinue = async () => {
     setSaving(true)
-    await setIdentity({
+    console.log('Saving identity:', {
       id: 'current',
       anonId: generatedId,
       displayName: displayName.trim() || null,
       createdAt: new Date(),
     })
-    router.push('/home')
+    
+    // Save to IndexedDB directly to ensure persistence
+    const { db } = await import('@/lib/db/daychat-db')
+    await db.identity.put({
+      id: 'current',
+      anonId: generatedId,
+      displayName: displayName.trim() || null,
+      createdAt: new Date(),
+    })
+    
+    console.log('Identity saved, redirecting...')
+    
+    // Force a small delay to ensure DB write completes
+    await new Promise(resolve => setTimeout(resolve, 100))
+    
+    // Hard redirect to force reload with new identity
+    window.location.href = '/home'
   }
 
   if (loading) {

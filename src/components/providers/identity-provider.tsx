@@ -23,8 +23,13 @@ export function IdentityProvider({ children }: { children: ReactNode }) {
 
   const loadIdentity = async () => {
     try {
+      console.log('Loading identity from IndexedDB...')
       const stored = await db.identity.get('current')
-      if (stored) setIdentityState(stored)
+      console.log('Identity loaded:', stored ? 'FOUND' : 'NOT FOUND')
+      if (stored) {
+        console.log('Identity:', stored)
+        setIdentityState(stored)
+      }
     } catch (error) {
       console.error('Failed to load identity:', error)
     }
@@ -32,7 +37,9 @@ export function IdentityProvider({ children }: { children: ReactNode }) {
   }
 
   const setIdentity = async (newIdentity: Identity) => {
+    console.log('Setting identity:', newIdentity)
     await db.identity.put({ ...newIdentity, id: 'current' }, 'current')
+    console.log('Identity saved to IndexedDB')
     setIdentityState(newIdentity)
   }
 
