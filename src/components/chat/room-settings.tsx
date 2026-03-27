@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Clock, Pencil, Trash2 } from 'lucide-react'
-import { ExpiryCountdown } from './expiry-countdown'
+import { ExpiryCountdown } from '@/components/room/expiry-countdown'
 
 interface RoomSettingsProps {
   room: any

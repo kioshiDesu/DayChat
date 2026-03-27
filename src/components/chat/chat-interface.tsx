@@ -11,7 +11,7 @@ import { RoomSettings } from './room-settings'
 import { db, LocalMessage } from '@/lib/db/daychat-db'
 import { sendMessage, loadMessages, subscribeToMessages } from '@/lib/messages/sync-service'
 import { ChevronLeft, Settings, MoreVertical, Pin } from 'lucide-react'
-import { ExpiryCountdown } from './expiry-countdown'
+import { ExpiryCountdown } from '@/components/room/expiry-countdown'
 
 export function ChatInterface() {
   const params = useParams()
