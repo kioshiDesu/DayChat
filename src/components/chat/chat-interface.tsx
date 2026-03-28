@@ -211,7 +211,6 @@ export function ChatInterface() {
       <div 
         ref={scrollRef} 
         className="flex-1 overflow-auto p-4 space-y-3 bg-background"
-        style={{ paddingBottom: 'calc(1rem + 140px)' }}
       >
         {messages.map((message) => (
           <div
@@ -254,7 +253,7 @@ export function ChatInterface() {
       </div>
 
       {/* Input - positioned above bottom nav */}
-      <div className="sticky bottom-[64px] z-40 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-safe">
+      <div className="sticky bottom-[64px] z-40 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <MessageInput
           onSend={handleSendMessage}
           replyingTo={replyingTo?.display_name}
