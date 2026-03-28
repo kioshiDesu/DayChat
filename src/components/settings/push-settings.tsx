@@ -51,17 +51,24 @@ export function PushSettings() {
       })
       console.log('[Push] Saved subscription to IndexedDB')
 
-      // Save to Supabase (for server-side sending)
-      const supabase = (await import('@/lib/supabase/client')).createClient()
-      const { error } = await supabase.from('push_subscriptions' as any).insert({
-        display_name: identity.displayName,
-        subscription: JSON.stringify(subscription),
-      } as any)
-
-      if (error) {
-        console.error('[Push] Failed to save subscription to Supabase:', error)
-      } else {
-        console.log('[Push] Saved subscription to Supabase successfully')
+      // Save to Supabase via API (uses service role key)
+      try {
+        const response = await fetch('/api/push/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            displayName: identity.displayName,
+            subscription: subscription.toJSON(),
+          }),
+        })
+        const result = await response.json()
+        if (response.ok) {
+          console.log('[Push] Saved subscription to Supabase successfully:', result)
+        } else {
+          console.error('[Push] Failed to save subscription to Supabase:', result)
+        }
+      } catch (error) {
+        console.error('[Push] Error saving to Supabase:', error)
       }
 
       setIsSubscribed(true)
