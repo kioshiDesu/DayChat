@@ -80,7 +80,7 @@ export function ChatInterface() {
       if (replyingTo) {
         finalContent = `Replying to ${replyingTo.display_name}: ${content}`
       }
-      await sendMessage(roomId, finalContent, identity)
+      await sendMessage(roomId, finalContent, { displayName: identity.displayName })
       setReplyingTo(null)
     } catch (error) {
       console.error('Failed to send message:', error)
@@ -161,7 +161,7 @@ export function ChatInterface() {
 
   if (!room || !identity) return null
 
-  const isCreator = room.creator_anon_id === identity.anonId
+  const isCreator = room.creator_anon_id === identity.displayName
 
   return (
     <div className="flex flex-col h-screen">
@@ -238,7 +238,7 @@ export function ChatInterface() {
           >
             <MessageBubble
               message={message}
-              isOwn={message.user_anon_id === identity.anonId}
+              isOwn={message.display_name === identity.displayName}
               canDelete={isCreator}
               showName={!isPinned[message.id]}
               isPinned={isPinned[message.id]}
@@ -267,7 +267,7 @@ export function ChatInterface() {
       {selectedMessage && (
         <MessageActions
           message={selectedMessage}
-          isOwn={selectedMessage.user_anon_id === identity.anonId}
+          isOwn={selectedMessage.display_name === identity.displayName}
           isCreator={isCreator}
           isOpen={showActions}
           onClose={() => { setShowActions(false); setSelectedMessage(null) }}

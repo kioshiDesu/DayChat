@@ -28,14 +28,14 @@ export default function HomePage() {
     const { data: myRoomsData } = await supabase
       .from('rooms')
       .select('*')
-      .eq('creator_anon_id', identity.anonId)
+      .eq('creator_anon_id', identity.displayName)
       .order('created_at', { ascending: false })
 
     // Load rooms where user has sent messages
     const { data: joinedRoomsData } = await supabase
       .from('messages')
       .select('room_id')
-      .eq('user_anon_id', identity.anonId)
+      .eq('user_anon_id', identity.displayName)
     
     let joinedRooms: Database['public']['Tables']['rooms']['Row'][] = []
     if (joinedRoomsData) {
@@ -74,7 +74,7 @@ export default function HomePage() {
           <h1 className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">DayChat</h1>
           {identity && (
             <p className="text-xs text-muted-foreground">
-              Logged in as {identity.displayName || identity.anonId}
+              Logged in as {identity.displayName}
             </p>
           )}
         </div>
