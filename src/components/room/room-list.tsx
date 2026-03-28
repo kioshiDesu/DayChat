@@ -36,11 +36,11 @@ export function RoomList({ rooms }: RoomListProps) {
       const roomsWithMsg = await Promise.all(
         rooms.map(async (room) => {
           const { data: messages } = await supabase
-            .from('messages')
+            .from('messages' as any)
             .select('content')
             .eq('room_id', room.id)
             .order('created_at', { ascending: false })
-            .limit(1)
+            .limit(1) as { data: { content: string }[] | null }
 
           return {
             ...room,
