@@ -44,7 +44,7 @@ export function RoomWizard() {
     expiresAt.setHours(expiresAt.getHours() + durationHours)
 
     const { data, error } = await supabase.from('rooms').insert({
-      creator_anon_id: identity.anonId,
+      creator_anon_id: identity.displayName,
       title,
       description: description || null,
       is_public: isPublic,
