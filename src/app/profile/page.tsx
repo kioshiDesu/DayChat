@@ -31,7 +31,6 @@ export default function ProfilePage() {
       ...identity,
       displayName: displayName.trim(),
     })
-    localStorage.setItem('daychat_display_name', displayName.trim())
     setLoading(false)
   }
 
@@ -40,13 +39,11 @@ export default function ProfilePage() {
     setDisplayName(newName)
   }
 
-  const handleSignOut = () => {
-    // Clear identity and redirect to setup
-    localStorage.clear()
-    const db = require('@/lib/db/daychat-db').db
-    db.delete().then(() => {
-      window.location.href = '/setup'
-    })
+  const handleSignOut = async () => {
+    // Clear IndexedDB and redirect to setup
+    const { db } = await import('@/lib/db/daychat-db')
+    await db.identity.clear()
+    window.location.href = '/setup'
   }
 
   if (!identity) {
