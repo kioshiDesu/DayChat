@@ -130,7 +130,7 @@ export function ChatInterface() {
   }
 
   const handleDeleteMessage = async () => {
-    if (!selectedMessage) return
+    if (!selectedMessage || !identity) return
     // Check if user owns this message (by display name) or is room creator
     const isOwner = selectedMessage.display_name === identity.displayName
     if (!isOwner && !isCreator) {
