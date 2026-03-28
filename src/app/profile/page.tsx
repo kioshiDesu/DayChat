@@ -10,7 +10,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RefreshCw, LogOut } from 'lucide-react'
 import { generateDisplayName } from '@/lib/identity-generator'
-import { PushSettings } from '@/components/settings/push-settings'
 
 export default function ProfilePage() {
   const { identity, setIdentity } = useIdentity()
@@ -101,7 +100,6 @@ export default function ProfilePage() {
             <p>• Clearing browser data will remove your identity</p>
           </CardContent>
         </Card>
-        <PushSettings />
       </div>
       <BottomNav />
     </div>
