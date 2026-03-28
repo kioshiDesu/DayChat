@@ -99,7 +99,6 @@ export function ChatInterface() {
     touchStartTime.current = Date.now()
     isLongPress.current = false
     
-    // Start long press timer (500ms)
     longPressTimer.current = setTimeout(() => {
       isLongPress.current = true
       const message = messages.find(m => m.id === messageId)
@@ -111,13 +110,11 @@ export function ChatInterface() {
     touchEndX.current = e.touches[0].clientX
     const diff = touchEndX.current - touchStartX.current
     
-    // Cancel long press if swiping
     if (Math.abs(diff) > 10 && longPressTimer.current) {
       clearTimeout(longPressTimer.current)
       longPressTimer.current = null
     }
     
-    // Show swipe indicator if swiping right > 50px
     if (diff > 50) {
       setSwipingId(messageId)
     } else {
@@ -126,7 +123,6 @@ export function ChatInterface() {
   }
 
   const handleTouchEnd = (e: React.TouchEvent, message: LocalMessage) => {
-    // Clear long press timer
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current)
       longPressTimer.current = null
@@ -135,10 +131,8 @@ export function ChatInterface() {
     const diff = touchEndX.current - touchStartX.current
     const duration = Date.now() - touchStartTime.current
     
-    // Reset swipe indicator
     setSwipingId(null)
     
-    // If not long press and swiped right > 80px quickly, trigger reply
     if (!isLongPress.current && diff > 80 && duration < 300) {
       handleSwipeReply(message)
     }
@@ -179,14 +173,14 @@ export function ChatInterface() {
   const isCreator = room.creator_anon_id === identity.displayName
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="p-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="p-3 flex items-center justify-between">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
             <button 
               onClick={() => router.back()} 
-              className="p-2 -ml-2 hover:bg-muted rounded-full transition-colors"
+              className="p-2 -ml-2 hover:bg-muted rounded-full transition-colors flex-shrink-0"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
@@ -197,9 +191,9 @@ export function ChatInterface() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             {!room.is_public && (
-              <button onClick={() => setShowShareModal(true)} className="text-sm text-primary p-2">
+              <button onClick={() => setShowShareModal(true)} className="p-2 hover:bg-muted rounded-full transition-colors">
                 Share
               </button>
             )}
@@ -216,7 +210,7 @@ export function ChatInterface() {
       {/* Messages */}
       <div 
         ref={scrollRef} 
-        className="flex-1 overflow-auto p-4 space-y-3 pb-[env(safe-area-inset-bottom)]"
+        className="flex-1 overflow-auto p-4 space-y-3 bg-background"
         style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
       >
         {messages.map((message) => (
@@ -236,8 +230,8 @@ export function ChatInterface() {
           >
             {/* Swipe indicator */}
             {swipingId === message.id && (
-              <div className="absolute left-0 top-0 bottom-0 w-16 bg-primary/10 rounded-l-2xl flex items-center justify-center">
-                <Reply className="h-5 w-5 text-primary" />
+              <div className="absolute left-0 top-0 bottom-0 w-16 bg-blue-500/10 rounded-l-2xl flex items-center justify-center">
+                <Reply className="h-5 w-5 text-blue-500" />
               </div>
             )}
             
@@ -250,7 +244,7 @@ export function ChatInterface() {
               onLongPress={() => handleLongPress(message)}
             />
             {isPinned[message.id] && (
-              <div className="flex items-center gap-1 text-xs text-primary mt-1 ml-1">
+              <div className="flex items-center gap-1 text-xs text-blue-500 mt-1 ml-1">
                 <Pin className="h-3 w-3 fill-current" />
                 <span>Pinned</span>
               </div>
@@ -259,7 +253,7 @@ export function ChatInterface() {
         ))}
       </div>
 
-      {/* Reply indicator (inline with input) */}
+      {/* Input */}
       <MessageInput 
         onSend={handleSendMessage}
         replyingTo={replyingTo?.display_name}
