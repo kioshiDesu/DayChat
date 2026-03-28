@@ -11,8 +11,7 @@ const supabase = createClient()
 export async function sendMessage(
   roomId: string,
   content: string,
-  identity: Identity,
-  roomCreatorDisplayName?: string
+  identity: Identity
 ) {
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
   const tempId = crypto.randomUUID()
@@ -51,44 +50,6 @@ export async function sendMessage(
   }
 
   await db.messages.update(tempId, { id: data.id, synced: true })
-
-  // Send push to room creator if not sender
-  console.log('[Push] Checking push notification trigger:', {
-    roomCreatorDisplayName,
-    senderDisplayName: identity.displayName,
-    shouldSend: !!(roomCreatorDisplayName && roomCreatorDisplayName !== identity.displayName)
-  })
-
-  if (roomCreatorDisplayName && roomCreatorDisplayName !== identity.displayName) {
-    try {
-      console.log('[Push] Sending push notification to:', roomCreatorDisplayName)
-      // Fire and forget - don't wait for response
-      fetch('/api/push/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          displayName: roomCreatorDisplayName,
-          title: 'New message',
-          body: content.substring(0, 100),
-          url: `/room/${roomId}`,
-          roomId,
-        }),
-      })
-        .then(res => {
-          console.log('[Push] Push API response status:', res.status)
-          return res.json()
-        })
-        .then(data => {
-          console.log('[Push] Push sent successfully:', data)
-        })
-        .catch(err => console.error('[Push] Push notification failed:', err))
-    } catch (error) {
-      console.error('[Push] Failed to trigger push:', error)
-    }
-  } else {
-    console.log('[Push] Skipping push notification (no creator or sender is creator)')
-  }
-
   return data
 }
 
@@ -130,13 +91,11 @@ export async function loadMessages(roomId: string): Promise<LocalMessage[]> {
 }
 
 export function subscribeToMessages(roomId: string, onMessage: (msg: LocalMessage, type: 'new' | 'expired' | 'deleted') => void) {
-  console.log('Subscribing to messages for room:', roomId)
   const channel = supabase
     .channel(`room:${roomId}`)
     .on('postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'messages', filter: `room_id=eq.${roomId}` },
       async (payload) => {
-        console.log('Received INSERT event:', payload.new)
         const newMsg = payload.new as LocalMessage
         await db.messages.put({ ...newMsg, expired: false, synced: true, deleted: false })
         onMessage(newMsg, 'new')
@@ -145,23 +104,11 @@ export function subscribeToMessages(roomId: string, onMessage: (msg: LocalMessag
     .on('postgres_changes',
       { event: 'DELETE', schema: 'public', table: 'messages' },
       async (payload) => {
-        console.log('Received DELETE event:', payload.old)
-        // Mark as deleted instead of removing
         await db.messages.update(payload.old.id, { expired: true, deleted: true, content: '(Deleted message)' })
         onMessage({ ...payload.old, expired: true, deleted: true, content: '(Deleted message)' } as LocalMessage, 'deleted')
       }
     )
-    .subscribe((status) => {
-      console.log('Subscription status:', status)
-      if (status === 'SUBSCRIBED') {
-        console.log('Successfully subscribed to room:', roomId)
-      } else if (status === 'CHANNEL_ERROR') {
-        console.error('Subscription error for room:', roomId)
-      }
-    })
+    .subscribe()
 
-  return () => { 
-    console.log('Unsubscribing from room:', roomId)
-    supabase.removeChannel(channel) 
-  }
+  return () => { supabase.removeChannel(channel) }
 }
