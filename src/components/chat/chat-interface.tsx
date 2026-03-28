@@ -185,10 +185,10 @@ export function ChatInterface() {
               <ChevronLeft className="h-5 w-5" />
             </button>
             <div className="flex-1 min-w-0">
-              <h2 className="font-semibold truncate">{room.title}</h2>
-              <p className="text-xs text-muted-foreground truncate">
-                <ExpiryCountdown expiresAt={room.expires_at} className="inline" />
-              </p>
+              <div className="flex items-center gap-2">
+                <h2 className="font-semibold truncate">{room.title}</h2>
+                <ExpiryCountdown expiresAt={room.expires_at} className="inline text-xs" />
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-1">
@@ -211,7 +211,7 @@ export function ChatInterface() {
       <div 
         ref={scrollRef} 
         className="flex-1 overflow-auto p-4 space-y-3 bg-background"
-        style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+        style={{ paddingBottom: 'calc(1rem + 140px)' }}
       >
         {messages.map((message) => (
           <div
@@ -253,12 +253,14 @@ export function ChatInterface() {
         ))}
       </div>
 
-      {/* Input */}
-      <MessageInput 
-        onSend={handleSendMessage}
-        replyingTo={replyingTo?.display_name}
-        onCancelReply={() => setReplyingTo(null)}
-      />
+      {/* Input - positioned above bottom nav */}
+      <div className="sticky bottom-[64px] z-40 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-safe">
+        <MessageInput
+          onSend={handleSendMessage}
+          replyingTo={replyingTo?.display_name}
+          onCancelReply={() => setReplyingTo(null)}
+        />
+      </div>
 
       {/* Message Actions Menu */}
       {selectedMessage && (
