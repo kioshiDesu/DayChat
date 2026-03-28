@@ -36,18 +36,26 @@ self.addEventListener('activate', (event) => {
 // Push event - show notification
 self.addEventListener('push', (event) => {
   console.log('[SW] Push event received');
-  
+  console.log('[SW] Event data available:', !!event.data);
+
   let data = {};
   try {
-    data = event.data?.json() || {};
-    console.log('[SW] Push data:', JSON.stringify(data, null, 2));
+    if (event.data) {
+      const text = event.data.text();
+      console.log('[SW] Raw push data:', text);
+      data = JSON.parse(text);
+      console.log('[SW] Parsed push data:', JSON.stringify(data, null, 2));
+    }
   } catch (e) {
     console.error('[SW] Failed to parse push data:', e);
     data = { title: 'DayChat', body: 'New message' };
   }
 
+  const title = data.title || 'DayChat';
+  const body = data.body || 'New message in DayChat';
+  
   const options = {
-    body: data.body || 'New message in DayChat',
+    body: body,
     icon: '/icon-192.png',
     badge: '/icon-192.png',
     vibrate: [100, 50, 100],
@@ -65,17 +73,25 @@ self.addEventListener('push', (event) => {
         title: 'Close',
       },
     ],
+    requireInteraction: true,
+    silent: false,
   };
 
-  console.log('[SW] Showing notification:', options.title || 'DayChat');
-  
+  console.log('[SW] Showing notification:', title, body);
+
   event.waitUntil(
-    self.registration.showNotification(data.title || 'DayChat', options)
+    self.registration.showNotification(title, options)
       .then(() => {
-        console.log('[SW] Notification shown successfully');
+        console.log('[SW] ✅ Notification shown successfully');
       })
       .catch(err => {
-        console.error('[SW] Failed to show notification:', err);
+        console.error('[SW] ❌ Failed to show notification:', err);
+        // Fallback - try with minimal options
+        console.log('[SW] Trying fallback notification...');
+        return self.registration.showNotification('DayChat', {
+          body: 'New message',
+          data: { url: '/home' }
+        });
       })
   );
 });

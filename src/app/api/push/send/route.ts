@@ -49,20 +49,29 @@ export async function POST(request: NextRequest) {
     const pushPromises = subscriptions.map(async (sub: any, index: number) => {
       try {
         console.log('[Push API] Sending push to subscription', index + 1, 'of', subscriptions.length)
-        await webPush.sendNotification(
+        console.log('[Push API] Subscription endpoint:', sub.subscription?.endpoint?.substring(0, 50) + '...')
+        
+        const payload = JSON.stringify({
+          title,
+          body: messageBody,
+          url,
+          roomId,
+        })
+        
+        console.log('[Push API] Payload:', payload)
+        
+        const result = await webPush.sendNotification(
           sub.subscription,
-          JSON.stringify({
-            title,
-            body: messageBody,
-            url,
-            roomId,
-          })
+          payload
         )
-        console.log('[Push API] Push sent successfully to subscription', index + 1)
-      } catch (error) {
-        console.error('[Push API] Push send failed for subscription', index + 1, ':', error)
+        
+        console.log('[Push API] Push sent successfully, status:', result?.statusCode)
+      } catch (error: any) {
+        console.error('[Push API] Push send failed for subscription', index + 1, ':', error.message)
+        console.error('[Push API] Error details:', error)
+        
         // Remove invalid subscription
-        if ((error as any).statusCode === 410) {
+        if (error.statusCode === 410) {
           console.log('[Push API] Removing expired subscription (410)')
           await supabase
             .from('push_subscriptions')
