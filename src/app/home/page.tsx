@@ -8,12 +8,22 @@ import { RoomList } from '@/components/room/room-list'
 import { BottomNav } from '@/components/layout/bottom-nav'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Loader2 } from 'lucide-react'
-import { Database } from '@/types/database'
+
+interface Room {
+  id: string
+  title: string
+  description: string | null
+  is_public: boolean
+  invite_code: string
+  expires_at: string
+  created_at: string
+  creator_anon_id: string
+}
 
 export default function HomePage() {
   const { identity } = useIdentity()
-  const [myRooms, setMyRooms] = useState<Database['public']['Tables']['rooms']['Row'][]>([])
-  const [discoverRooms, setDiscoverRooms] = useState<Database['public']['Tables']['rooms']['Row'][]>([])
+  const [myRooms, setMyRooms] = useState<Room[]>([])
+  const [discoverRooms, setDiscoverRooms] = useState<Room[]>([])
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
@@ -38,7 +48,7 @@ export default function HomePage() {
       .select('room_id')
       .eq('user_anon_id', identity.displayName)
 
-    let joinedRooms: Database['public']['Tables']['rooms']['Row'][] = []
+    let joinedRooms: Room[] = []
     if (joinedRoomsData) {
       const roomIds = [...new Set(joinedRoomsData.map((m: { room_id: string }) => m.room_id))]
       if (roomIds.length > 0) {
@@ -53,7 +63,7 @@ export default function HomePage() {
     setMyRooms([...(myRoomsData || []), ...joinedRooms].reduce((acc, room) => {
       if (!acc.find((r: { id: string }) => r.id === room.id)) acc.push(room)
       return acc
-    }, [] as Database['public']['Tables']['rooms']['Row'][]))
+    }, [] as Room[]))
 
     // Load public rooms for discover
     const { data: publicRooms } = await supabase

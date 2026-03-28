@@ -6,15 +6,25 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Users, Clock, Lock, MessageCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
-import { Database } from '@/types/database'
 
-interface RoomListProps {
-  rooms: Database['public']['Tables']['rooms']['Row'][]
+interface Room {
+  id: string
+  title: string
+  description: string | null
+  is_public: boolean
+  invite_code: string
+  expires_at: string
+  created_at: string
+  creator_anon_id: string
 }
 
-interface RoomWithMessage extends Database['public']['Tables']['rooms']['Row'] {
+interface RoomWithMessage extends Room {
   latestMessage?: string
   messageCount?: number
+}
+
+interface RoomListProps {
+  rooms: Room[]
 }
 
 export function RoomList({ rooms }: RoomListProps) {
