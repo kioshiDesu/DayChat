@@ -54,36 +54,54 @@ export async function sendMessage(
 }
 
 export async function loadMessages(roomId: string): Promise<LocalMessage[]> {
-  const localMessages = await db.messages.where('room_id').equals(roomId).toArray()
+  // First, load from IndexedDB (cache)
+  const cachedMessages = await db.messages.where('room_id').equals(roomId).toArray()
+  
+  // Fetch only active (non-expired) messages from server
   const { data: serverMessages } = await supabase
     .from('messages')
     .select('*')
     .eq('room_id', roomId)
+    .gt('expires_at', new Date().toISOString()) // Only fetch non-expired
     .order('created_at', { ascending: true }) as { data: LocalMessage[] | null }
 
-  if (!serverMessages) return localMessages
+  if (!serverMessages || serverMessages.length === 0) {
+    // No new messages on server, return cached (mark expired ones)
+    const now = Date.now()
+    for (const msg of cachedMessages) {
+      const msgTime = new Date(msg.created_at).getTime()
+      const isOlderThan24h = now - msgTime > 24 * 60 * 60 * 1000
+      if (!msg.expired && isOlderThan24h) {
+        await db.messages.update(msg.id, { expired: true })
+      }
+    }
+    const allMessages = await db.messages.where('room_id').equals(roomId).toArray()
+    return allMessages.sort((a, b) => 
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    )
+  }
 
   const serverIds = new Set(serverMessages.map(m => m.id))
 
-  // Only mark as expired if it's NOT on server AND it's older than 24 hours
+  // Mark cached messages as expired if not on server and older than 24h
   const now = Date.now()
-  for (const msg of localMessages) {
+  for (const msg of cachedMessages) {
     const msgTime = new Date(msg.created_at).getTime()
     const isOlderThan24h = now - msgTime > 24 * 60 * 60 * 1000
-    
     if (!serverIds.has(msg.id) && isOlderThan24h && !msg.expired) {
       await db.messages.update(msg.id, { expired: true })
     }
   }
 
+  // Add new server messages to cache
   for (const msg of serverMessages) {
     const existing = await db.messages.get(msg.id)
     if (!existing) {
-      await db.messages.add({ ...msg, expired: false, synced: true })
+      await db.messages.add({ ...msg, expired: false, synced: true, deleted: false })
     }
   }
 
-  // Return messages sorted by created_at
+  // Return all messages sorted
   const allMessages = await db.messages.where('room_id').equals(roomId).toArray()
   return allMessages.sort((a, b) => 
     new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
