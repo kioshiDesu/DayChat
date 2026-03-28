@@ -8,7 +8,12 @@ export interface Identity {
 
 const supabase = createClient()
 
-export async function sendMessage(roomId: string, content: string, identity: Identity) {
+export async function sendMessage(
+  roomId: string,
+  content: string,
+  identity: Identity,
+  roomCreatorDisplayName?: string
+) {
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
   const tempId = crypto.randomUUID()
 
@@ -46,6 +51,27 @@ export async function sendMessage(roomId: string, content: string, identity: Ide
   }
 
   await db.messages.update(tempId, { id: data.id, synced: true })
+
+  // Send push to room creator if not sender
+  if (roomCreatorDisplayName && roomCreatorDisplayName !== identity.displayName) {
+    try {
+      // Fire and forget - don't wait for response
+      fetch('/api/push/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          displayName: roomCreatorDisplayName,
+          title: 'New message',
+          body: content.substring(0, 100),
+          url: `/room/${roomId}`,
+          roomId,
+        }),
+      }).catch(err => console.error('Push notification failed:', err))
+    } catch (error) {
+      console.error('Failed to trigger push:', error)
+    }
+  }
+
   return data
 }
 
