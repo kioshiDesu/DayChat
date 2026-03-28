@@ -22,6 +22,12 @@ export default function ProfilePage() {
     if (identity) {
       setDisplayName(identity.displayName)
     }
+    // Register service worker on mount
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => console.log('Service Worker registered:', reg.scope))
+        .catch(err => console.error('Service Worker registration failed:', err))
+    }
   }, [identity])
 
   const handleSave = async () => {

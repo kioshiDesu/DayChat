@@ -18,9 +18,20 @@ export function PushSettings() {
   }, [])
 
   const checkSubscription = async () => {
-    const registration = await navigator.serviceWorker.ready
-    const subscription = await registration.pushManager.getSubscription()
-    setIsSubscribed(!!subscription)
+    try {
+      if (!('serviceWorker' in navigator) || !('pushManager' in window)) {
+        console.log('Push notifications not supported')
+        setIsSubscribed(false)
+        return
+      }
+      
+      const registration = await navigator.serviceWorker.ready
+      const subscription = await registration.pushManager.getSubscription()
+      setIsSubscribed(!!subscription)
+    } catch (error) {
+      console.error('Error checking subscription:', error)
+      setIsSubscribed(false)
+    }
   }
 
   const handleSubscribe = async () => {
