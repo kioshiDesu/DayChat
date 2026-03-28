@@ -53,8 +53,15 @@ export async function sendMessage(
   await db.messages.update(tempId, { id: data.id, synced: true })
 
   // Send push to room creator if not sender
+  console.log('[Push] Checking push notification trigger:', {
+    roomCreatorDisplayName,
+    senderDisplayName: identity.displayName,
+    shouldSend: !!(roomCreatorDisplayName && roomCreatorDisplayName !== identity.displayName)
+  })
+
   if (roomCreatorDisplayName && roomCreatorDisplayName !== identity.displayName) {
     try {
+      console.log('[Push] Sending push notification to:', roomCreatorDisplayName)
       // Fire and forget - don't wait for response
       fetch('/api/push/send', {
         method: 'POST',
@@ -66,10 +73,20 @@ export async function sendMessage(
           url: `/room/${roomId}`,
           roomId,
         }),
-      }).catch(err => console.error('Push notification failed:', err))
+      })
+        .then(res => {
+          console.log('[Push] Push API response status:', res.status)
+          return res.json()
+        })
+        .then(data => {
+          console.log('[Push] Push sent successfully:', data)
+        })
+        .catch(err => console.error('[Push] Push notification failed:', err))
     } catch (error) {
-      console.error('Failed to trigger push:', error)
+      console.error('[Push] Failed to trigger push:', error)
     }
+  } else {
+    console.log('[Push] Skipping push notification (no creator or sender is creator)')
   }
 
   return data

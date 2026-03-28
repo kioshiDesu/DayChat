@@ -11,9 +11,13 @@ webPush.setVapidDetails(
 
 export async function POST(request: NextRequest) {
   try {
-    const { displayName, title, body, url, roomId } = await request.json()
+    const body = await request.json()
+    const { displayName, title, body: messageBody, url, roomId } = body
+
+    console.log('[Push API] Received push request:', { displayName, title, body: messageBody, url, roomId })
 
     if (!displayName) {
+      console.log('[Push API] Rejecting: no display name provided')
       return NextResponse.json({ error: 'Display name required' }, { status: 400 })
     }
 
@@ -24,31 +28,42 @@ export async function POST(request: NextRequest) {
     )
 
     // Get user's push subscriptions
-    const { data: subscriptions } = await supabase
+    const { data: subscriptions, error: fetchError } = await supabase
       .from('push_subscriptions')
       .select('subscription')
       .eq('display_name', displayName)
 
+    if (fetchError) {
+      console.error('[Push API] Failed to fetch subscriptions:', fetchError)
+      return NextResponse.json({ error: 'Failed to fetch subscriptions' }, { status: 500 })
+    }
+
+    console.log('[Push API] Found subscriptions for', displayName, ':', subscriptions?.length || 0)
+
     if (!subscriptions || subscriptions.length === 0) {
+      console.log('[Push API] No subscriptions found for user:', displayName)
       return NextResponse.json({ message: 'No subscriptions found' })
     }
 
     // Send push to all subscriptions
-    const pushPromises = subscriptions.map(async (sub: any) => {
+    const pushPromises = subscriptions.map(async (sub: any, index: number) => {
       try {
+        console.log('[Push API] Sending push to subscription', index + 1, 'of', subscriptions.length)
         await webPush.sendNotification(
           sub.subscription,
           JSON.stringify({
             title,
-            body,
+            body: messageBody,
             url,
             roomId,
           })
         )
+        console.log('[Push API] Push sent successfully to subscription', index + 1)
       } catch (error) {
-        console.error('Push send failed:', error)
+        console.error('[Push API] Push send failed for subscription', index + 1, ':', error)
         // Remove invalid subscription
         if ((error as any).statusCode === 410) {
+          console.log('[Push API] Removing expired subscription (410)')
           await supabase
             .from('push_subscriptions')
             .delete()
@@ -58,10 +73,11 @@ export async function POST(request: NextRequest) {
     })
 
     await Promise.all(pushPromises)
+    console.log('[Push API] All push notifications processed')
 
     return NextResponse.json({ message: 'Push sent successfully' })
   } catch (error) {
-    console.error('Push API error:', error)
+    console.error('[Push API] Error:', error)
     return NextResponse.json(
       { error: 'Failed to send push notification' },
       { status: 500 }

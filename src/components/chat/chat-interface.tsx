@@ -80,7 +80,8 @@ export function ChatInterface() {
       if (replyingTo) {
         finalContent = `Replying to ${replyingTo.display_name}: ${content}`
       }
-      await sendMessage(roomId, finalContent, { displayName: identity.displayName })
+      // Pass room creator's display name for push notification
+      await sendMessage(roomId, finalContent, { displayName: identity.displayName }, room?.creator_anon_id)
       setReplyingTo(null)
     } catch (error) {
       console.error('Failed to send message:', error)

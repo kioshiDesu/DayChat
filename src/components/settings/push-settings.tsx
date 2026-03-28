@@ -38,24 +38,35 @@ export function PushSettings() {
     if (!identity) return
     setLoading(true)
 
+    console.log('[Push] Starting subscription process for:', identity.displayName)
     const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!
     const subscription = await subscribeToPush(vapidPublicKey)
 
     if (subscription) {
+      console.log('[Push] Subscription created successfully')
       // Save to IndexedDB
       await db.identity.put({
         ...identity,
         pushSubscription: subscription.toJSON() as any,
       })
+      console.log('[Push] Saved subscription to IndexedDB')
 
       // Save to Supabase (for server-side sending)
       const supabase = (await import('@/lib/supabase/client')).createClient()
-      await supabase.from('push_subscriptions' as any).insert({
+      const { error } = await supabase.from('push_subscriptions' as any).insert({
         display_name: identity.displayName,
         subscription: JSON.stringify(subscription),
       } as any)
 
+      if (error) {
+        console.error('[Push] Failed to save subscription to Supabase:', error)
+      } else {
+        console.log('[Push] Saved subscription to Supabase successfully')
+      }
+
       setIsSubscribed(true)
+    } else {
+      console.log('[Push] Subscription failed - no subscription returned')
     }
 
     setLoading(false)

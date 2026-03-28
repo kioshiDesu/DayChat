@@ -21,6 +21,16 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
 }
 
+// Register service worker globally on mount
+function ServiceWorkerRegistration() {
+  if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('Service Worker registered:', reg.scope))
+      .catch(err => console.error('Service Worker registration failed:', err))
+  }
+  return null
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -31,10 +41,13 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-screen flex flex-col">
         <SupabaseProvider>
           <IdentityProvider>
-            <IdentityGuard>{children}</IdentityGuard>
+            <IdentityGuard>
+              <ServiceWorkerRegistration />
+              {children}
+            </IdentityGuard>
           </IdentityProvider>
         </SupabaseProvider>
       </body>
