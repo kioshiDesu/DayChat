@@ -45,7 +45,7 @@ export function PushSettings() {
       // Save to IndexedDB
       await db.identity.put({
         ...identity,
-        pushSubscription: subscription.toJSON(),
+        pushSubscription: subscription.toJSON() as any,
       })
 
       // Save to Supabase (for server-side sending)
