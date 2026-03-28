@@ -3,6 +3,7 @@ import { db, LocalMessage } from '@/lib/db/daychat-db'
 
 export interface Identity {
   displayName: string
+  token?: string
 }
 
 const supabase = createClient()

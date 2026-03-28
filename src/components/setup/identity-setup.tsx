@@ -47,7 +47,7 @@ export function IdentitySetup() {
       createdAt: new Date(),
     })
     
-    // Save token to localStorage for quick verification
+    // Save to localStorage for quick verification
     localStorage.setItem('daychat_token', token)
     localStorage.setItem('daychat_display_name', finalName)
     

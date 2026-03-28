@@ -9,38 +9,34 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RefreshCw, LogOut } from 'lucide-react'
-import { generateAnonymousId } from '@/lib/identity-generator'
+import { generateDisplayName } from '@/lib/identity-generator'
 
 export default function ProfilePage() {
-  const { identity, setIdentity, regenerateIdentity } = useIdentity()
+  const { identity, setIdentity } = useIdentity()
   const router = useRouter()
   const [displayName, setDisplayName] = useState('')
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (identity) {
-      setDisplayName(identity.displayName || '')
+      setDisplayName(identity.displayName)
     }
   }, [identity])
 
   const handleSave = async () => {
-    if (!identity) return
+    if (!identity || !displayName.trim()) return
     setLoading(true)
     await setIdentity({
       ...identity,
-      displayName: displayName.trim() || null,
+      displayName: displayName.trim(),
     })
+    localStorage.setItem('daychat_display_name', displayName.trim())
     setLoading(false)
   }
 
   const handleRegenerate = async () => {
-    const newId = generateAnonymousId()
-    if (identity) {
-      await setIdentity({
-        ...identity,
-        anonId: newId,
-      })
-    }
+    const newName = generateDisplayName()
+    setDisplayName(newName)
   }
 
   const handleSignOut = () => {
@@ -70,24 +66,25 @@ export default function ProfilePage() {
         <Card>
           <CardHeader>
             <CardTitle>Your Identity</CardTitle>
-            <CardDescription>Your anonymous identity is stored locally in this browser</CardDescription>
+            <CardDescription>Your identity is stored locally in this browser</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="anonId">Anonymous ID</Label>
+              <Label htmlFor="displayName">Display Name</Label>
               <div className="flex gap-2">
-                <Input id="anonId" value={identity.anonId} readOnly className="flex-1" />
-                <Button variant="outline" size="icon" onClick={handleRegenerate} title="Regenerate ID">
+                <Input
+                  id="displayName"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Enter your name"
+                  className="flex-1"
+                />
+                <Button variant="outline" size="icon" onClick={handleRegenerate} title="Generate random name">
                   <RefreshCw className="h-4 w-4" />
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">This is how others see you in chats</p>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="displayName">Display Name (optional)</Label>
-              <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Leave empty to use Anonymous ID" />
-            </div>
-            <Button onClick={handleSave} disabled={loading} className="w-full">
+            <Button onClick={handleSave} disabled={loading || !displayName.trim()} className="w-full">
               {loading ? 'Saving...' : 'Save Changes'}
             </Button>
           </CardContent>

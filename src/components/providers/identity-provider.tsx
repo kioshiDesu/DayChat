@@ -64,6 +64,11 @@ export function IdentityProvider({ children }: { children: ReactNode }) {
     console.log('Setting identity:', newIdentity)
     await db.identity.put({ ...newIdentity, id: 'current' })
     console.log('Identity saved to IndexedDB')
+    // Also update localStorage
+    localStorage.setItem('daychat_display_name', newIdentity.displayName)
+    if (newIdentity.token) {
+      localStorage.setItem('daychat_token', newIdentity.token)
+    }
     setIdentityState(newIdentity)
   }
 
