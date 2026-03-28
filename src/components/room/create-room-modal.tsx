@@ -55,15 +55,15 @@ export function CreateRoomModal({ open, onOpenChange }: CreateRoomModalProps) {
       is_public: isPublic,
       invite_code: generateInviteCode(),
       expires_at: expiresAt.toISOString(),
-    } as any).select().single()
+    } as any).select().single() as { data: { id: string } | null; error: any }
 
     if (error) { setError(error.message); setLoading(false); return }
 
     onOpenChange(false)
     resetForm()
     
-    if (isPublic) { router.push(`/room/${data.id}`) }
-    else { router.push(`/room/${data.id}?share=true`) }
+    if (isPublic && data) { router.push(`/room/${data.id}`) }
+    else if (data) { router.push(`/room/${data.id}?share=true`) }
   }
 
   const generateInviteCode = () => {
