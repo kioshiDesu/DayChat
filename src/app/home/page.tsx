@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useIdentity } from '@/components/providers/identity-provider'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { RoomCard } from '@/components/room/room-card'
+import { RoomList } from '@/components/room/room-list'
 import { BottomNav } from '@/components/layout/bottom-nav'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Loader2 } from 'lucide-react'
 import { Database } from '@/types/database'
 
 export default function HomePage() {
@@ -36,7 +37,7 @@ export default function HomePage() {
       .from('messages')
       .select('room_id')
       .eq('user_anon_id', identity.displayName)
-    
+
     let joinedRooms: Database['public']['Tables']['rooms']['Row'][] = []
     if (joinedRoomsData) {
       const roomIds = [...new Set(joinedRoomsData.map((m: { room_id: string }) => m.room_id))]
@@ -62,14 +63,14 @@ export default function HomePage() {
       .gt('expires_at', new Date().toISOString())
       .order('created_at', { ascending: false })
       .limit(50)
-    
+
     setDiscoverRooms(publicRooms || [])
     setLoading(false)
   }
 
   return (
     <div className="min-h-screen pb-20">
-      <div className="sticky top-0 bg-background z-10 border-b">
+      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
         <div className="p-4">
           <h1 className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">DayChat</h1>
           {identity && (
@@ -85,34 +86,47 @@ export default function HomePage() {
               <TabsTrigger value="discover">Discover</TabsTrigger>
             </TabsList>
           </div>
-          <TabsContent value="my-rooms" className="p-4">
-            <ScrollArea className="h-[calc(100vh-200px)]">
-              <div className="space-y-3">
-                {myRooms.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">
-                    No rooms yet. Create one or join a private room!
-                  </p>
-                ) : (
-                  myRooms.map((room) => <RoomCard key={room.id} {...room} />)
-                )}
-              </div>
-            </ScrollArea>
-          </TabsContent>
-          <TabsContent value="discover" className="p-4">
-            <ScrollArea className="h-[calc(100vh-200px)]">
-              <div className="space-y-3">
-                {discoverRooms.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">
-                    No public rooms available
-                  </p>
-                ) : (
-                  discoverRooms.map((room) => <RoomCard key={room.id} {...room} />)
-                )}
-              </div>
-            </ScrollArea>
-          </TabsContent>
         </Tabs>
       </div>
+
+      <Tabs defaultValue="my-rooms" className="w-full">
+        <TabsContent value="my-rooms" className="mt-0">
+          <ScrollArea className="h-[calc(100vh-180px)]">
+            <div className="p-4 space-y-2">
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : myRooms.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">No rooms yet</p>
+                  <p className="text-sm text-muted-foreground mt-1">Create one or join a private room!</p>
+                </div>
+              ) : (
+                <RoomList rooms={myRooms} />
+              )}
+            </div>
+          </ScrollArea>
+        </TabsContent>
+        <TabsContent value="discover" className="mt-0">
+          <ScrollArea className="h-[calc(100vh-180px)]">
+            <div className="p-4 space-y-2">
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : discoverRooms.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">No public rooms available</p>
+                </div>
+              ) : (
+                <RoomList rooms={discoverRooms} />
+              )}
+            </div>
+          </ScrollArea>
+        </TabsContent>
+      </Tabs>
+
       <BottomNav />
     </div>
   )

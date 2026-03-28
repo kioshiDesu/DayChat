@@ -10,8 +10,9 @@ import { MessageActions } from './message-actions'
 import { RoomSettings } from './room-settings'
 import { db, LocalMessage } from '@/lib/db/daychat-db'
 import { sendMessage, loadMessages, subscribeToMessages } from '@/lib/messages/sync-service'
-import { ChevronLeft, Settings, MoreVertical, Pin } from 'lucide-react'
+import { ChevronLeft, Settings, Pin, Reply } from 'lucide-react'
 import { ExpiryCountdown } from '@/components/room/expiry-countdown'
+import { cn } from '@/lib/utils'
 
 export function ChatInterface() {
   const params = useParams()
@@ -26,34 +27,30 @@ export function ChatInterface() {
   const [selectedMessage, setSelectedMessage] = useState<LocalMessage | null>(null)
   const [showActions, setShowActions] = useState(false)
   const [isPinned, setIsPinned] = useState<Record<string, boolean>>({})
+  const [swipingId, setSwipingId] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const touchStartX = useRef<number>(0)
   const touchEndX = useRef<number>(0)
+  const touchStartTime = useRef<number>(0)
+  const isLongPress = useRef<boolean>(false)
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     if (!identity) return
-    
-    console.log('ChatInterface: initializing for room', roomId)
+
     loadRoom()
-    
-    loadMessages(roomId).then(msgs => {
-      console.log('Loaded messages:', msgs.length)
-      setMessages(msgs)
-    })
-    
+    loadMessages(roomId).then(msgs => setMessages(msgs))
+
     const unsubscribe = subscribeToMessages(roomId, (msg, type) => {
-      console.log('Received message update:', type, msg.id)
       setMessages(prev => {
         const exists = prev.find(m => m.id === msg.id)
         let updated
         if (exists) {
-          console.log('Updating existing message')
           updated = prev.map(m => m.id === msg.id ? msg : m)
         } else {
-          console.log('Adding new message')
           updated = [...prev, msg]
         }
-        return updated.sort((a, b) => 
+        return updated.sort((a, b) =>
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
         )
       })
@@ -96,42 +93,61 @@ export function ChatInterface() {
     setReplyingTo(message)
   }, [])
 
-  const handleTouchStart = (e: React.TouchEvent) => {
+  const handleTouchStart = (e: React.TouchEvent, messageId: string) => {
     touchStartX.current = e.touches[0].clientX
+    touchEndX.current = e.touches[0].clientX
+    touchStartTime.current = Date.now()
+    isLongPress.current = false
+    
+    // Start long press timer (500ms)
+    longPressTimer.current = setTimeout(() => {
+      isLongPress.current = true
+      const message = messages.find(m => m.id === messageId)
+      if (message) handleLongPress(message)
+    }, 500)
   }
 
-  const handleTouchMove = (e: React.TouchEvent) => {
+  const handleTouchMove = (e: React.TouchEvent, messageId: string) => {
     touchEndX.current = e.touches[0].clientX
+    const diff = touchEndX.current - touchStartX.current
+    
+    // Cancel long press if swiping
+    if (Math.abs(diff) > 10 && longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
+    
+    // Show swipe indicator if swiping right > 50px
+    if (diff > 50) {
+      setSwipingId(messageId)
+    } else {
+      setSwipingId(null)
+    }
   }
 
   const handleTouchEnd = (e: React.TouchEvent, message: LocalMessage) => {
-    const swipeDistance = touchEndX.current - touchStartX.current
-    if (swipeDistance > 50) {
+    // Clear long press timer
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
+    
+    const diff = touchEndX.current - touchStartX.current
+    const duration = Date.now() - touchStartTime.current
+    
+    // Reset swipe indicator
+    setSwipingId(null)
+    
+    // If not long press and swiped right > 80px quickly, trigger reply
+    if (!isLongPress.current && diff > 80 && duration < 300) {
       handleSwipeReply(message)
     }
-    touchStartX.current = 0
-    touchEndX.current = 0
-  }
-
-  const handleUpdateTitle = async (newTitle: string) => {
-    const supabase = (await import('@/lib/supabase/client')).createClient()
-    const result = await (supabase.from('rooms') as any).update({ title: newTitle }).eq('id', roomId).select()
-    if (result.data && result.data.length > 0) {
-      setRoom({ ...room, title: newTitle })
-    }
-    setShowSettings(false)
-  }
-
-  const handleDeleteRoom = async () => {
-    if (!confirm('Are you sure you want to delete this room? This cannot be undone.')) return
-    const supabase = (await import('@/lib/supabase/client')).createClient()
-    await (supabase.from('rooms') as any).delete().eq('id', roomId)
-    router.push('/home')
+    
+    isLongPress.current = false
   }
 
   const handleDeleteMessage = async () => {
     if (!selectedMessage || !identity) return
-    // Check if user owns this message (by display name) or is room creator
     const isOwner = selectedMessage.display_name === identity.displayName
     if (!isOwner && !isCreator) {
       alert('You can only delete your own messages')
@@ -140,7 +156,6 @@ export function ChatInterface() {
     
     const supabase = (await import('@/lib/supabase/client')).createClient()
     await (supabase.from('messages') as any).delete().eq('id', selectedMessage.id)
-    // Mark as deleted locally (don't remove)
     setMessages(prev => prev.map(m => 
       m.id === selectedMessage.id 
         ? { ...m, deleted: true, content: '(Deleted message)', expired: true }
@@ -177,17 +192,14 @@ export function ChatInterface() {
             </button>
             <div className="flex-1 min-w-0">
               <h2 className="font-semibold truncate">{room.title}</h2>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground truncate">
                 <ExpiryCountdown expiresAt={room.expires_at} className="inline" />
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {!room.is_public && (
-              <button 
-                onClick={() => setShowShareModal(true)} 
-                className="text-sm text-primary p-2"
-              >
+              <button onClick={() => setShowShareModal(true)} className="text-sm text-primary p-2">
                 Share
               </button>
             )}
@@ -201,24 +213,6 @@ export function ChatInterface() {
         </div>
       </div>
 
-      {/* Reply Preview */}
-      {replyingTo && (
-        <div className="bg-muted/50 border-b p-3 flex items-center justify-between">
-          <div className="flex-1 min-w-0">
-            <p className="text-xs text-muted-foreground">
-              Replying to {replyingTo.display_name}
-            </p>
-            <p className="text-sm truncate">{replyingTo.content}</p>
-          </div>
-          <button
-            onClick={() => setReplyingTo(null)}
-            className="p-1 hover:bg-muted rounded"
-          >
-            <ChevronLeft className="h-4 w-4 rotate-90" />
-          </button>
-        </div>
-      )}
-
       {/* Messages */}
       <div 
         ref={scrollRef} 
@@ -228,14 +222,25 @@ export function ChatInterface() {
         {messages.map((message) => (
           <div
             key={message.id}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
+            className={cn(
+              'relative transition-transform duration-200',
+              swipingId === message.id && 'translate-x-4'
+            )}
+            onTouchStart={(e) => handleTouchStart(e, message.id)}
+            onTouchMove={(e) => handleTouchMove(e, message.id)}
             onTouchEnd={(e) => handleTouchEnd(e, message)}
             onContextMenu={(e) => {
               e.preventDefault()
               handleLongPress(message)
             }}
           >
+            {/* Swipe indicator */}
+            {swipingId === message.id && (
+              <div className="absolute left-0 top-0 bottom-0 w-16 bg-primary/10 rounded-l-2xl flex items-center justify-center">
+                <Reply className="h-5 w-5 text-primary" />
+              </div>
+            )}
+            
             <MessageBubble
               message={message}
               isOwn={message.display_name === identity.displayName}
@@ -254,14 +259,12 @@ export function ChatInterface() {
         ))}
       </div>
 
-      {/* Input */}
-      <div className="sticky bottom-0 z-40 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-[env(safe-area-inset-bottom)]">
-        <MessageInput 
-          onSend={handleSendMessage}
-          replyingTo={replyingTo?.display_name}
-          onCancelReply={() => setReplyingTo(null)}
-        />
-      </div>
+      {/* Reply indicator (inline with input) */}
+      <MessageInput 
+        onSend={handleSendMessage}
+        replyingTo={replyingTo?.display_name}
+        onCancelReply={() => setReplyingTo(null)}
+      />
 
       {/* Message Actions Menu */}
       {selectedMessage && (
@@ -284,8 +287,18 @@ export function ChatInterface() {
         room={room}
         open={showSettings}
         onOpenChange={setShowSettings}
-        onUpdateTitle={handleUpdateTitle}
-        onDeleteRoom={handleDeleteRoom}
+        onUpdateTitle={async (newTitle) => {
+          const supabase = (await import('@/lib/supabase/client')).createClient()
+          await (supabase.from('rooms') as any).update({ title: newTitle }).eq('id', roomId)
+          setRoom({ ...room, title: newTitle })
+          setShowSettings(false)
+        }}
+        onDeleteRoom={async () => {
+          if (!confirm('Are you sure you want to delete this room? This cannot be undone.')) return
+          const supabase = (await import('@/lib/supabase/client')).createClient()
+          await (supabase.from('rooms') as any).delete().eq('id', roomId)
+          router.push('/home')
+        }}
         isCreator={isCreator}
       />
 
