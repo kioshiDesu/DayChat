@@ -89,17 +89,18 @@ export default function HomePage() {
             </p>
           )}
         </div>
-        <Tabs defaultValue="my-rooms" className="w-full">
-          <div className="px-4">
+      </div>
+
+      <Tabs defaultValue="my-rooms" className="w-full">
+        <div className="sticky top-[73px] z-30 bg-background border-b">
+          <div className="px-4 py-2">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="my-rooms">My Rooms</TabsTrigger>
               <TabsTrigger value="discover">Discover</TabsTrigger>
             </TabsList>
           </div>
-        </Tabs>
-      </div>
+        </div>
 
-      <Tabs defaultValue="my-rooms" className="w-full">
         <TabsContent value="my-rooms" className="mt-0">
           <ScrollArea className="h-[calc(100vh-180px)]">
             <div className="p-4 space-y-2">

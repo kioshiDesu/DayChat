@@ -21,7 +21,6 @@ export default function ProfilePage() {
     if (identity) {
       setDisplayName(identity.displayName)
     }
-    // Service worker is now registered globally in layout.tsx
   }, [identity])
 
   const handleSave = async () => {
@@ -47,7 +46,13 @@ export default function ProfilePage() {
   }
 
   if (!identity) {
-    return null
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center text-muted-foreground">
+          <p>Loading...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
