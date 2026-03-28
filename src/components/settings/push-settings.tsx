@@ -50,10 +50,10 @@ export function PushSettings() {
 
       // Save to Supabase (for server-side sending)
       const supabase = (await import('@/lib/supabase/client')).createClient()
-      await supabase.from('push_subscriptions').insert({
+      await supabase.from('push_subscriptions' as any).insert({
         display_name: identity.displayName,
         subscription: JSON.stringify(subscription),
-      })
+      } as any)
 
       setIsSubscribed(true)
     }
