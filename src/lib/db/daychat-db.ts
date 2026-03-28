@@ -3,7 +3,7 @@ import Dexie, { Table } from 'dexie';
 export interface PushSubscriptionJSON {
   endpoint?: string;
   expirationTime?: number | null;
-  keys: {
+  keys?: {
     p256dh: string;
     auth: string;
   };
