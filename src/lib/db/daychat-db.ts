@@ -1,7 +1,8 @@
 import Dexie, { Table } from 'dexie';
 
 export interface PushSubscriptionJSON {
-  endpoint: string;
+  endpoint?: string;
+  expirationTime?: number | null;
   keys: {
     p256dh: string;
     auth: string;
