@@ -1,10 +1,19 @@
 import Dexie, { Table } from 'dexie';
 
+export interface PushSubscriptionJSON {
+  endpoint: string;
+  keys: {
+    p256dh: string;
+    auth: string;
+  };
+}
+
 export interface Identity {
   id?: string;
   displayName: string;
   token: string;
   createdAt: Date;
+  pushSubscription?: PushSubscriptionJSON;
 }
 
 export interface LocalMessage {
